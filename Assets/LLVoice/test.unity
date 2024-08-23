@@ -221,7 +221,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 258dba335557d994aa189c9b6c6ae69d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  url: wss://127.0.0.1:10096/
+  url: ws://127.0.0.1:10096/
 --- !u!4 &287341369
 Transform:
   m_ObjectHideFlags: 0

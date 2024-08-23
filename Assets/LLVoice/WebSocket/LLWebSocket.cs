@@ -3,7 +3,7 @@ using LLVoice.Voice;
 using System;
 using UnityEngine;
 
-namespace LLStar.Net
+namespace LLVoice.Net
 {
     /// <summary>
     /// websocket 封装，屏蔽了不同平台差异, 屏蔽了安全性检查
@@ -14,14 +14,13 @@ namespace LLStar.Net
         ///websocket地址
         ///</summary>
         public string url = "wss://127.0.0.1:10096/";
-        /// <summary>
-        /// websocket收到消息回调
-        /// </summary>
-        public Action<string> OnMessageCallback;
+
         /// <summary>
         /// websocket连接成功回调
         /// </summary>
         public Action OnConnectCallback;
+
+        public ILLWebSocket webSocket;
 
         //private void Start()
         //{
@@ -34,25 +33,20 @@ namespace LLStar.Net
         ///<summary>
         ///连接websocket
         ///</summary>
-        public void Connect(Action<string> onMessageCallback = null, Action onConnect = null)
+        public void Connect(Action onConnect = null, Action<string> onStrMsg = null, Action<byte[]> onByteMsg = null)
         {
-            OnMessageCallback = onMessageCallback;
             OnConnectCallback = onConnect;
+            
+            Uri uri = new(url);
 #if UNITY_WEBGL
             //websocket连接
+            webSocket = new LLWebSocketWebGL(uri);
 #else
             //非webgl 平台 websocket连接
-            LLWebSocketWindows.Connect(url, OnMessage, OnConnect);
+            webSocket = new LLWebSocketWindows(uri);
 #endif
-        }
-
-        /// <summary>
-        /// websocket收到消息
-        /// </summary>
-        public void OnMessage(string msg)
-        {
-            //Debug.Log("websocket收到消息:" + msg);
-            OnMessageCallback?.Invoke(msg);
+            webSocket.SetCallBack(onStrMsg, onByteMsg);
+            StartCoroutine(webSocket.Connect(OnConnect));
         }
 
         /// <summary>
@@ -64,19 +58,18 @@ namespace LLStar.Net
             OnConnectCallback?.Invoke();
         }
 
+        private void Update()
+        {
+            if (webSocket != null) webSocket.Update();
+        }
+
         /// <summary>
         /// websocket发送消息 bytes
         /// </summary>
         /// <param name="data">字节</param>
         public void Send(byte[] data)
         {
-            //Debug.Log("发送消息:" + data.Length);
-            #if UNITY_WEBGL
-            //websocket发送消息
-            #else
-            //非webgl 平台 websocket发送消息
-            LLWebSocketWindows.Send(data);
-            #endif
+            webSocket.Send(data);
         }
 
         /// <summary>
@@ -85,22 +78,12 @@ namespace LLStar.Net
         /// <param name="msg">字符串</param>
         public void Send(string msg)
         {
-            #if UNITY_WEBGL
-            //websocket发送消息
-            #else
-            //非webgl 平台 websocket发送消息
-            LLWebSocketWindows.Send(msg);
-            #endif
+            webSocket.Send(msg);
         }
 
         public void Close()
         {
-            #if UNITY_WEBGL
-            //websocket关闭
-            #else
-            //非webgl 平台 websocket关闭
-            LLWebSocketWindows.Close();
-            #endif
+            webSocket.Close();
         }
 
 

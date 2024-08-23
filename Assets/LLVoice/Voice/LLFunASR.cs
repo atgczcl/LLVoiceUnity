@@ -1,4 +1,4 @@
-using LLStar.Net;
+using LLVoice.Net;
 using LLVoice.Tools;
 using System;
 using System.Collections;
@@ -28,12 +28,13 @@ namespace LLVoice.Voice
 
         private void Start()
         {
+            //²âÊÔÊä³ö
             msgHandler.OnMessageCallback = OnMessageCallback;
             Debug.Log("websocket start test");
             LLWebSocket.Instance.Connect(onConnect: () => {
                 Init();
                 LLMicrophoneRecorderMgr.Instance.Initialized();
-            }, onMessageCallback: OnMessage);
+            }, onStrMsg:OnMessage);
         }
 
         private void OnMessage(string msg)
@@ -110,7 +111,7 @@ namespace LLVoice.Voice
         private int id = 0;
         private int wordsMaxPrint = 1000;
 
-        public Queue<LLFunMessage> messageQueue = new Queue<LLFunMessage>();
+        //public Queue<LLFunMessage> messageQueue = new Queue<LLFunMessage>();
 
         public UnityEvent<string> OnMessageCallback;
 
@@ -118,12 +119,13 @@ namespace LLVoice.Voice
         {
             //string message = ReceiveWebSocketMessage();
             var meg = JsonUtility.FromJson<LLFunMessage>(message);
+            HandleText(meg);
             //string text = meg.text;
             //bool isFinal = meg.is_final;
             //List<List<long>> timestamp = meg.timestamp;
 
             //HandleText(meg, text, timestamp, isFinal);
-            messageQueue.Enqueue(meg);
+            //messageQueue.Enqueue(meg);
 
         }
 
@@ -132,14 +134,14 @@ namespace LLVoice.Voice
         /// </summary>
         public void DispatchMessages()
         {
-            while (messageQueue.Count > 0)
-            {
-                var meg = messageQueue.Dequeue();
-                //string text = meg.text;
-                //bool isFinal = meg.is_final;
-                //List<List<long>> timestamp = meg.timestamp;
-                HandleText(meg);
-            }
+            //while (messageQueue.Count > 0)
+            //{
+            //    var meg = messageQueue.Dequeue();
+            //    //string text = meg.text;
+            //    //bool isFinal = meg.is_final;
+            //    //List<List<long>> timestamp = meg.timestamp;
+            //    HandleText(meg);
+            //}
         }
 
 

@@ -1,14 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using System;
-using System.Threading;
-using LLStar.Net;
 using LLVoice.Tools;
-using UnityEngine.UI;
+using LLVoice.Net;
 
 namespace LLVoice.Voice
 {
@@ -46,31 +41,12 @@ namespace LLVoice.Voice
             if (Application.HasUserAuthorization(UserAuthorization.Microphone))
             {
                 StartRecording();
-                // 开始录音
-                //microphoneClip = Microphone.Start(null, true, 1, 16000);
-
-                //// 等待录音完成
-                //while (!(Microphone.GetPosition(null) >= microphoneClip.length))
-                //{
-                //    yield return null;
-                //}
-
-                //do
-                //{
-                //    microphoneClip = Microphone.Start(null, true, 1, 16000);
-                //    yield return null;
-                //} while (!Microphone.IsRecording(null));
-
-                //StartCoroutine(MicrophoneSamplingRecognition());
             }
             else
             {
                 Debug.Log("请授权麦克风权限！");
             }
         }
-
-
-
 
         // 开始录音
         public void StartRecording()
@@ -149,98 +125,21 @@ namespace LLVoice.Voice
             }
         }
 
-        byte[] FloatArrayToByteArray(in float[] floatArray)
-        {
-            int byteCount = floatArray.Length * sizeof(float);
-            byte[] byteArray = new byte[byteCount];
-
-            Buffer.BlockCopy(floatArray, 0, byteArray, 0, byteCount);
-
-            return byteArray;
-        }
-
-        //IEnumerator CheckAudioData()
-        //{
-        //    while (isRecording)
-        //    {
-        //        yield return new WaitForSeconds(0.01f);
-        //        if (isRecording && recordingClip != null)
-        //        {
-        //            int length = recordingClip.samples * recordingClip.channels;
-        //            //int length = AudioConfig.CalculateChunkSize();
-        //            //Debug.Log($"录音数据长度：{length}");
-        //            float[] floatArray = new float[length];
-        //            recordingClip.GetData(floatArray, 0);
-        //            Debug.LogError($"recordingClip.samples:{recordingClip.samples}");
-        //            //byte[] byteArray = ConvertFloatToPCM(floatArray);
-        //            ConvertFloatToPCM16(floatArray, out byte[] byteArray);
-
-        //            ///////////////////////////////pcm////////////////////////////////////////
-        //            //byte[] bytes = new byte[floatArray.Length * 2];
-        //            //int byteCount = floatArray.Length * 2;
-        //            //byte[] byteArray = new byte[byteCount];
-
-        //            //int offset = 0;
-        //            //foreach (float sample in floatArray)
-        //            //{
-        //            //    short convertedSample = (short)(sample * short.MaxValue);
-        //            //    byteArray[offset++] = (byte)(convertedSample & 0xff);
-        //            //    byteArray[offset++] = (byte)((convertedSample >> 8) & 0xff);
-        //            //}
-        //            //////////////////////////////////////////////////////////////////////////////////
-
-        //            //frameCount++;
-
-        //            //if (frameCount >= SEND_INTERVAL)
-        //            //{
-        //            //    frameCount = 0;
-        //            //    SendAudioData(bytes);
-        //            //}
-
-        //            SendAudioData(byteArray);
-        //        }
-        //        else
-        //        {
-        //            Debug.LogError("录音未开始或录音已结束");
-        //            break;
-        //        }
-        //    }
-        //}
-
+        /// <summary>
+        /// 开始录音
+        /// </summary>
+        /// <param name="data"></param>
         void SendAudioData(byte[] data)
         {
             Debug.LogError($"发送数据：{data.Length}");
             LLWebSocket.Instance.Send(data);
         }
 
-        public byte[] ConvertFloatToPCM(float[] floatSamples, out byte[] pcmData)
-        {
-            // PCM数据的采样率和通道数
-            //const int sampleRate = AudioConfig.RATE;
-            const int channels = 1; // 单声道
-
-            // 计算PCM数据的长度
-            int numSamples = floatSamples.Length * channels;
-            pcmData = new byte[numSamples * 2]; // 每个样本16位
-
-            for (int i = 0; i < floatSamples.Length; i++)
-            {
-                short sample = (short)(floatSamples[i] * short.MaxValue);
-                byte[] bytes = BitConverter.GetBytes(sample);
-
-                // 如果系统字节序与目标PCM数据的字节序不同，则需要交换字节顺序
-                if (BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(bytes);
-                }
-
-                pcmData[i * 2] = bytes[0];
-                pcmData[i * 2 + 1] = bytes[1];
-            }
-            return pcmData;
-        }
-
-        // 转换函数
+        /// <summary>
+        /// 转换函数,将float数组转换为PCM16数据
+        /// </summary>
+        /// <param name="floatArray"></param>
+        /// <param name="pcmData"></param>
         public void ConvertFloatToPCM16(float[] floatArray, out byte[] pcmData)
         {
             int sampleCount = floatArray.Length;

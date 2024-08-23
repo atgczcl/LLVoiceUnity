@@ -1,4 +1,3 @@
-using LLStar.Net;
 using LLVoice.Tools;
 using System;
 using System.Collections;
@@ -7,6 +6,7 @@ using System.IO.Compression;
 using System.IO;
 using System.Net.WebSockets;
 using UnityEngine;
+using LLVoice.Net;
 
 namespace LLVoice.Voice
 {

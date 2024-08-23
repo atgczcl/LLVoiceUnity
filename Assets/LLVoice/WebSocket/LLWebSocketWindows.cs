@@ -1,113 +1,156 @@
 using System;
-using WebSocketSharp;
 using UnityEngine;
-using UnityEditor.PackageManager;
 using System.Text;
+using System.Collections.Generic;
+using System.Collections;
+using WebSocketSharp;
 
-namespace LLStar.Net
+namespace LLVoice.Net
 {
     ///<summary>
     ///windows平台websocket连接
     ///</summary>
-    public class LLWebSocketWindows
+    public class LLWebSocketWindows: ILLWebSocket
     {
-        ///<summary>
-        ///websocket客户端
-        ///</summary>
-        public static WebSocket client;
+        private Uri mUrl;
+        WebSocketSharp.WebSocket m_Socket;
+        Queue<MessageEventArgs> m_Messages = new Queue<MessageEventArgs>();
+        bool m_IsConnected = false;
+        string m_Error = null;
+        /// <summary>
+        /// websocket收到消息回调
+        /// </summary>
+        public Action<string> OnStringMessageCallback;
+        public Action<byte[]> OnByteMessageCallback;
 
-        ///<summary>
-        ///收到数据回调
-        public static Action<string> ReceiveCallback;
-        public static Action OnConnect;
-
-        ///<summary>
-        ///websocket连接
-        ///</summary>
-        /// <param name="url">websocket地址</param>
-        public static void Connect(string url, Action<string> callback = null, Action onConnect = null)
+        public LLWebSocketWindows(Uri url)
         {
-            ReceiveCallback = callback;
-            OnConnect = onConnect;
-            
-            client = new WebSocket(url);
-            client.OnOpen += OnWebSocketOpen;
-            client.OnMessage += OnWebSocketMessage;
-            client.OnError += OnWebSocketError;
-            client.OnClose += OnWebSocketClose;
-            client.Log.Output += OnWebSocketLog;
-            client.Log.Level = WebSocketSharp.LogLevel.Debug;
-            client.SslConfiguration.ServerCertificateValidationCallback =
-              (sender, certificate, chain, sslPolicyErrors) => {
-                  // Do something to validate the server certificate.
-                  //...
+            mUrl = url;
 
-                return true; // If the server certificate is valid.
-            };
-            //忽略证书验证
-            //client.Options.SetRequestHeader("");
-            client.Connect();
+            string protocol = mUrl.Scheme;
+            if (!protocol.Equals("ws") && !protocol.Equals("wss"))
+                throw new ArgumentException("Unsupported protocol: " + protocol);
         }
 
-        public static void OnWebSocketLog(LogData data, string arg2)
+        public void Send(string str)
         {
-            Debug.Log($"WebSocketLog: {data.Message}");
+            m_Socket.Send(str);
         }
 
-        public static void OnWebSocketOpen(object sender, EventArgs e)
+        public IEnumerator Connect(Action onConnect = null)
         {
-            Debug.Log("WebSocket opened");
-            OnConnect?.Invoke();
+            m_Socket = new WebSocketSharp.WebSocket(mUrl.ToString());
+            m_Socket.OnMessage += (sender, e) => OnWebSocketMessage(e);
+            m_Socket.OnOpen += (sender, e) => m_IsConnected = true;
+            m_Socket.OnError += (sender, e) => m_Error = e.Message;
+            m_Socket.SslConfiguration.ServerCertificateValidationCallback =
+                  (sender, certificate, chain, sslPolicyErrors) =>
+                  {
+                      // Do something to validate the server certificate.
+                      //...
+
+                      return true; // If the server certificate is valid.
+                  };
+            m_Socket.ConnectAsync();
+            while (!m_IsConnected && m_Error == null)
+                yield return 0;
+            onConnect?.Invoke();
         }
 
-        public static void OnWebSocketMessage(object sender, MessageEventArgs e)
+        private void OnWebSocketMessage(MessageEventArgs e)
         {
-            //Debug.Log("WebSocket message: " + e.Data);
-            ReceiveCallback?.Invoke(e.Data);
+            Debug.Log("OnWebSocketMessage: " + e.Data);
+            m_Messages.Enqueue(e);
         }
 
-        public static void OnWebSocketError(object sender, ErrorEventArgs e)
+        public void OnMessage(byte[] buffer)
         {
-            Debug.Log("WebSocket error: " + e.Message);
+            OnByteMessageCallback?.Invoke(buffer);
         }
 
-        public static void OnWebSocketClose(object sender, CloseEventArgs e)
+        public void OnMessage(string str)
         {
-            Debug.Log($"WebSocket closed: {e.Reason}|{e.Code}|{e.WasClean}");
+            OnStringMessageCallback?.Invoke(str);
         }
 
-
-        ///<summary>
-        ///发送数据
-        ///</summary>
-        ///<param name="data">数据</param>
-        public static void Send(byte[] data)
+        public void Update()
         {
-            if (client != null && client.IsAlive)
-                client.Send(data);
+            while (m_Messages.Count > 0)
+            {
+                MessageEventArgs e = m_Messages.Dequeue();
+                OnMessage(e.Data);
+                OnMessage(e.RawData);
+            }
         }
 
-        ///<summary>
-        ///发送数据 string
-        ///</summary>
-        ///<param name="data">数据</param>
-        public static void Send(string data)
+        /// <summary>
+        /// 发送数据
+        /// </summary>
+        /// <param name="buffer"></param>
+
+        public void Send(byte[] buffer)
         {
-            // 将字符串转换为UTF-8编码的字节数组
-            byte[] utf8Bytes = Encoding.UTF8.GetBytes(data);
-            // 将字节数组转换回字符串
-            string utf8String = Encoding.UTF8.GetString(utf8Bytes);
-            if (client != null && client.IsAlive)
-                client.Send(utf8String);
+            m_Socket.Send(buffer);
         }
 
-        ///<summary>
-        ///关闭连接
-        ///</summary>
-        public static void Close()
+        public MessageEventArgs Recv()
         {
-            client.Close(CloseStatusCode.Normal, "Closing connection");
-            client = null;
+            if (m_Messages.Count == 0)
+                return null;
+            return m_Messages.Dequeue();
         }
+
+        public string RecvString()
+        {
+            MessageEventArgs e = Recv();
+            if (e == null)
+                return null;
+            return e.Data;
+        }
+
+        public byte[] RecvByte()
+        {
+            MessageEventArgs msg = Recv();
+            if (msg == null)
+                return null;
+            return msg.RawData;
+        }
+
+        public void Close()
+        {
+            m_Socket.Close();
+        }
+
+        public void SetCallBack(Action<string> OnStringMessageCallback, Action<byte[]> OnByteMessageCallback)
+        {
+            this.OnStringMessageCallback = OnStringMessageCallback;
+            this.OnByteMessageCallback = OnByteMessageCallback;
+        }
+
+        public string error
+        {
+            get
+            {
+                return m_Error;
+            }
+        }
+    }
+
+    ///<summary>
+    ///LLWebSocket for Windows和WebGL的公共接口，统一函数名
+    ///</summary>
+    public interface ILLWebSocket { 
+        public void Send(string str);
+        public void Send(byte[] buffer);
+        public IEnumerator Connect(Action onConnect = null);
+        public void SetCallBack(Action<string> OnStringMessageCallback, Action<byte[]> OnByteMessageCallback);
+
+        public void OnMessage(string str);
+        public void OnMessage(byte[] buffer);
+        public void Update();
+
+        public byte[] RecvByte();
+        public string RecvString();
+        public void Close();
     }
 }
