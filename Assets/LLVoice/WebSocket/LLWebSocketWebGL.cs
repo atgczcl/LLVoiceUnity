@@ -87,7 +87,8 @@ namespace LLVoice.Net
 
 			while (SocketState(m_NativeRef) == 0)
 				yield return 0;
-            onConnect?.Invoke();
+            if (SocketState(m_NativeRef) == 1)
+                onConnect?.Invoke();
         }
  
 		public void Close()

@@ -36,7 +36,6 @@ namespace LLVoice.Net
         public void Connect(Action onConnect = null, Action<string> onStrMsg = null, Action<byte[]> onByteMsg = null)
         {
             OnConnectCallback = onConnect;
-            
             Uri uri = new(url);
 #if UNITY_WEBGL
             //websocket¡¨Ω”

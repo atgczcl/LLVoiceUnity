@@ -35,6 +35,7 @@ namespace LLVoice.Voice
                 Init();
                 LLMicrophoneRecorderMgr.Instance.Initialized();
             }, onStrMsg:OnMessage);
+
         }
 
         private void OnMessage(string msg)
