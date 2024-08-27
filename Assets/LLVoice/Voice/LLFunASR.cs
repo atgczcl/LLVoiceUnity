@@ -149,6 +149,7 @@ namespace LLVoice.Voice
 
         public string offline_text = "";
         public string rec_text = "";
+        public string online_text = "";
         // Method to handle the message
         public void GetJsonMessage(string jsonMsg)
         {
@@ -166,6 +167,7 @@ namespace LLVoice.Voice
             }
             else
             {
+                online_text += rectxt;
                 rec_text += rectxt;
             }
 
@@ -173,7 +175,7 @@ namespace LLVoice.Voice
 
             //Debug.Log("offline_text: " + asrmodel + "," + offline_text);
             //Debug.Log("rec_text: " + rec_text);
-            UpdateConsoleText(rec_text);
+            UpdateConsoleText(online_text);
         }
 
         /// <summary>

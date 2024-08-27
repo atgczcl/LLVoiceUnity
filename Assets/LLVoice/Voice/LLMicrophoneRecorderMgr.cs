@@ -19,13 +19,11 @@ namespace LLVoice.Voice
         public AudioClip recordingClip;
         public string microphoneDevice;
         public bool isRecording = false;
-        // 获取当前的SynchronizationContext
-        public SynchronizationContext context = SynchronizationContext.Current;
 
         public override void Awake()
         {
             base.Awake();
-            context = SynchronizationContext.Current;
+            
         }
 
         ///<summary>
@@ -33,7 +31,7 @@ namespace LLVoice.Voice
         ///</summary>
         public void Initialized()
         {
-            Debug.LogError("初始化麦克风");
+            Debug.Log("初始化麦克风，开始！");
             //因为初始化是在websocket连接成功后进行的，在异步中无法调用协程，所以使用InvokeOnMainThread回到主线程执行
             InvokeOnMainThread(() => {
                 StartCoroutine(InitializedMicrophone());
@@ -54,6 +52,7 @@ namespace LLVoice.Voice
             {
                 Debug.Log("请授权麦克风权限！");
             }
+            Debug.Log("初始化麦克风，完成！");
         }
 
         // 开始录音
@@ -165,7 +164,7 @@ namespace LLVoice.Voice
         /// <param name="data"></param>
         void SendAudioData(byte[] data)
         {
-            Debug.LogError($"发送数据：{data.Length}");
+            //Debug.LogError($"发送数据：{data.Length}");
             LLWebSocket.Instance.Send(data);
         }
 
@@ -199,35 +198,7 @@ namespace LLVoice.Voice
             }
         }
 
-        /// <summary>
-        /// 在主线程上执行操作
-        /// </summary>
-        /// <param name="action"></param>
-        public void InvokeOnMainThread(System.Action action)
-        {
-            
-            // 回到主线程
-            context.Post(_ =>
-            {
-                Debug.Log("回到主线程");
-                action?.Invoke();
-            }, null);
-        }
-
-        /// <summary>
-        /// 在主线程上执行协程
-        /// </summary>
-        public void InvokeOnMainThread(IEnumerator enumerator)
-        {
-            // 获取当前的SynchronizationContext
-            var context = SynchronizationContext.Current;
-            // 回到主线程
-            context.Post(_ =>
-            {
-                Debug.Log("回到主线程");
-                StartCoroutine(enumerator);
-            }, null);
-        }
+        
 
         private void OnDestroy()
         {
