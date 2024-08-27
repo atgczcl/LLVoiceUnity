@@ -59,7 +59,7 @@ namespace LLVoice.Net
 
         private void Update()
         {
-            if (webSocket != null) webSocket.Update();
+            webSocket?.Update();
         }
 
         /// <summary>

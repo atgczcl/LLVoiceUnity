@@ -25,21 +25,8 @@ namespace LLVoice.Net
                 throw new ArgumentException("Unsupported protocol: " + protocol);
         }
 
-        public void Send(string str)
-        {
-            //Send(Encoding.UTF8.GetBytes(str));
-            SocketSendString(m_NativeRef, str);
-        }
 
-        public string RecvString()
-        {
-            byte[] retval = RecvByte();
-            if (retval == null)
-                return null;
-            return Encoding.UTF8.GetString(retval);
-        }
-
-//#if UNITY_WEBGL && !UNITY_EDITOR
+#if UNITY_WEBGL && !UNITY_EDITOR
 		[DllImport("__Internal")]
 		private static extern int SocketCreate (string url);
 
@@ -64,7 +51,21 @@ namespace LLVoice.Net
 		[DllImport("__Internal")]
 		private static extern int SocketError (int socketInstance, byte[] ptr, int length);
 
-		int m_NativeRef = 0;
+        int m_NativeRef = 0;
+
+        public void Send(string str)
+        {
+            //Send(Encoding.UTF8.GetBytes(str));
+            SocketSendString(m_NativeRef, str);
+        }
+
+        public string RecvString()
+        {
+            byte[] retval = RecvByte();
+            if (retval == null)
+                return null;
+            return Encoding.UTF8.GetString(retval);
+        }
 
 		public void Send(byte[] buffer)
 		{
@@ -108,6 +109,8 @@ namespace LLVoice.Net
 
         public void Update()
         {
+            //只在webgl上执行
+            //#if UNITY_WEBGL && !UNITY_EDITOR
             if (SocketState(m_NativeRef) == 1)
             {
                 byte[] retval = RecvByte();
@@ -116,6 +119,7 @@ namespace LLVoice.Net
                 OnMessage(Encoding.UTF8.GetString(retval));
                 OnMessage(retval);
             }
+            //#endif
         }
 
         public byte[] RecvByte()
@@ -147,7 +151,56 @@ namespace LLVoice.Net
 				return Encoding.UTF8.GetString (buffer);				
 			}
 		}
-//#endif
-	}
+#else
+        public void Send(string str)
+        {
+        }
+
+        public void Send(byte[] buffer)
+        {
+        }
+
+        public IEnumerator Connect(Action onConnect = null)
+        {
+            Debug.LogError("Editor Run WebGLSocket is not support!");
+            yield break;
+        }
+
+        public void SetCallBack(Action<string> OnStringMessageCallback, Action<byte[]> OnByteMessageCallback)
+        {
+            
+        }
+
+        public void OnMessage(string str)
+        {
+            
+        }
+
+        public void OnMessage(byte[] buffer)
+        {
+            
+        }
+
+        public void Update()
+        {
+            
+        }
+
+        public byte[] RecvByte()
+        {
+            return null;
+        }
+
+        public string RecvString()
+        {
+            return null;
+        }
+
+        public void Close()
+        {
+            
+        }
+#endif
+    }
 
 }
