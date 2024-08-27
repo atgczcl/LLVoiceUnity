@@ -7,6 +7,11 @@ using LLVoice.Net;
 
 namespace LLVoice.Voice
 {
+    /// <summary>
+    /// éº¦å…‹é£å½•éŸ³ç®¡ç†å™¨
+    /// webgl:https://github.com/bnco-dev/unity-webgl-microphone.git
+    /// 
+    /// </summary>
     public class LLMicrophoneRecorderMgr : MonoSingleton<LLMicrophoneRecorderMgr>
     {
         public AudioClip recordingClip;
@@ -14,26 +19,15 @@ namespace LLVoice.Voice
         public bool isRecording = false;
 
         ///<summary>
-        ///³õÊ¼»¯
+        ///åˆå§‹åŒ–
         ///</summary>
         public void Initialized()
         {
-            // »ñÈ¡Âó¿Ë·çÉè±¸ÁĞ±í
-            string[] devices = Microphone.devices;
-            if (devices.Length > 0)
-            {
-                microphoneDevice = null;
-                Debug.Log("Ê¹ÓÃÂó¿Ë·çÉè±¸: " + microphoneDevice);
-            }
-            else
-            {
-                Debug.LogError("Ã»ÓĞÕÒµ½Âó¿Ë·çÉè±¸");
-            }
             StartCoroutine(InitializedMicrophone());
         }
 
         ///<summary>
-        ///³õÊ¼»¯Âó¿Ë·ç
+        ///åˆå§‹åŒ–éº¦å…‹é£
         ///</summary>
         IEnumerator InitializedMicrophone()
         {
@@ -44,35 +38,62 @@ namespace LLVoice.Voice
             }
             else
             {
-                Debug.Log("ÇëÊÚÈ¨Âó¿Ë·çÈ¨ÏŞ£¡");
+                Debug.Log("è¯·æˆæƒéº¦å…‹é£æƒé™ï¼");
             }
         }
 
-        // ¿ªÊ¼Â¼Òô
+        // å¼€å§‹å½•éŸ³
         public void StartRecording()
         {
-            if (!isRecording)
+            if (Application.platform == RuntimePlatform.WebGLPlayer)
             {
-                recordingClip = Microphone.Start(microphoneDevice, true, 1, AudioConfig.RATE);
-                isRecording = true;
-                Debug.Log("¿ªÊ¼Â¼Òô"+ isRecording);
-                StartCoroutine(CheckAudioData());
+                LLWebGLMicrophone.Instance.JS_StartMicrophone();
+            }
+            else {
+#if !UNITY_WEBGL
+                // è·å–éº¦å…‹é£è®¾å¤‡åˆ—è¡¨
+                string[] devices = Microphone.devices;
+                if (devices.Length > 0)
+                {
+                    microphoneDevice = "";
+                    Debug.Log("ä½¿ç”¨éº¦å…‹é£è®¾å¤‡: " + microphoneDevice);
+                    if (!isRecording)
+                    {
+                        recordingClip = Microphone.Start(microphoneDevice, true, 1, AudioConfig.RATE);
+                        isRecording = true;
+                        Debug.Log("å¼€å§‹å½•éŸ³" + isRecording);
+                        StartCoroutine(CheckAudioData());
+                    }
+                }
+                else
+                {
+                    Debug.LogError("æ²¡æœ‰æ‰¾åˆ°éº¦å…‹é£è®¾å¤‡");
+                }
+                #endif
             }
         }
 
-        // ½áÊøÂ¼Òô
+        // ç»“æŸå½•éŸ³
         public void StopRecording()
         {
-            if (isRecording)
+            if (Application.platform == RuntimePlatform.WebGLPlayer)
             {
-                Microphone.End(microphoneDevice);
-                isRecording = false;
-                Debug.Log("½áÊøÂ¼Òô");
+                LLWebGLMicrophone.Instance.JS_StopMicrophone();
+            }
+            else { 
+            #if !UNITY_WEBGL
+                if (isRecording)
+                {
+                    Microphone.End(microphoneDevice);
+                    isRecording = false;
+                    Debug.Log("ç»“æŸå½•éŸ³");
+                }
+            #endif
             }
         }
-
+        #if !UNITY_WEBGL
         /// <summary>
-        /// ÉÏÒ»´Î²ÉÑùÎ»ÖÃ
+        /// ä¸Šä¸€æ¬¡é‡‡æ ·ä½ç½®
         /// </summary>
         int lastSampling;
 
@@ -82,10 +103,10 @@ namespace LLVoice.Voice
             while (isRecording)
             {
                 yield return new WaitForSeconds(0.005f);
-                //if (!isRecording) continue;²¿·ÖÏîÄ¿ĞèÇó³ÉÁË£¬ÄãÒªÏëÊ²Ã´Ò»Ğ©Ã»ÓĞ£¬ËùÒÔÊÇÍí°²²âÊÔÃ»ÓĞ°¡£¬ÄãÕâ±ß²éÑ¯µÄ²»ÄÜ°¡£¬ÕæÊÇµÄ£¬ÎÒÄÜ¸ĞÊÜÏÂÀ´¶¼ÊÇÊ²Ã´àÅ£¬¶Ô¶Ô¶Ô£¬ÓĞÃ»ÓĞÄãºÃ
+                //if (!isRecording) continue;éƒ¨åˆ†é¡¹ç›®éœ€æ±‚æˆäº†ï¼Œä½ è¦æƒ³ä»€ä¹ˆä¸€äº›æ²¡æœ‰ï¼Œæ‰€ä»¥æ˜¯æ™šå®‰æµ‹è¯•æ²¡æœ‰å•Šï¼Œä½ è¿™è¾¹æŸ¥è¯¢çš„ä¸èƒ½å•Šï¼ŒçœŸæ˜¯çš„ï¼Œæˆ‘èƒ½æ„Ÿå—ä¸‹æ¥éƒ½æ˜¯ä»€ä¹ˆå—¯ï¼Œå¯¹å¯¹å¯¹ï¼Œæœ‰æ²¡æœ‰ä½ å¥½
                 if (recordingClip != null)
                 {
-                    int currentPos = Microphone.GetPosition(null);
+                    int currentPos = Microphone.GetPosition(microphoneDevice);
                     bool isSucceed = recordingClip.GetData(f, 0);
 
                     if (isSucceed)
@@ -98,16 +119,18 @@ namespace LLVoice.Voice
                             {
                                 count = currentPos - lastSampling;
                                 p = new float[count];
+                                Debug.LogError(1);
                                 Array.Copy(f, lastSampling, p, 0, count);
                             }
                             else
                             {
                                 count = AudioConfig.RATE - lastSampling;
                                 p = new float[count + currentPos];
+                                Debug.LogError(2);
                                 Array.Copy(f, lastSampling, p, 0, count);
-
+                                Debug.LogError(3);
                                 Array.Copy(f, 0, p, count, currentPos);
-
+                                Debug.LogError(4);
                                 count += currentPos;
                             }
 
@@ -119,47 +142,47 @@ namespace LLVoice.Voice
                 }
                 else
                 {
-                    Debug.LogError("Â¼ÒôÎ´¿ªÊ¼»òÂ¼ÒôÒÑ½áÊø");
+                    Debug.LogError("å½•éŸ³æœªå¼€å§‹æˆ–å½•éŸ³å·²ç»“æŸ");
                     break;
                 }
             }
         }
-
+#endif
         /// <summary>
-        /// ¿ªÊ¼Â¼Òô
+        /// å¼€å§‹å½•éŸ³
         /// </summary>
         /// <param name="data"></param>
         void SendAudioData(byte[] data)
         {
-            Debug.LogError($"·¢ËÍÊı¾İ£º{data.Length}");
+            Debug.LogError($"å‘é€æ•°æ®ï¼š{data.Length}");
             LLWebSocket.Instance.Send(data);
         }
 
         /// <summary>
-        /// ×ª»»º¯Êı,½«floatÊı×é×ª»»ÎªPCM16Êı¾İ
+        /// è½¬æ¢å‡½æ•°,å°†floatæ•°ç»„è½¬æ¢ä¸ºPCM16æ•°æ®
         /// </summary>
         /// <param name="floatArray"></param>
         /// <param name="pcmData"></param>
         public void ConvertFloatToPCM16(float[] floatArray, out byte[] pcmData)
         {
             int sampleCount = floatArray.Length;
-            pcmData = new byte[sampleCount * 2]; // 16Î»PCM£¬Ã¿¸öÑù±¾2×Ö½Ú
+            pcmData = new byte[sampleCount * 2]; // 16ä½PCMï¼Œæ¯ä¸ªæ ·æœ¬2å­—èŠ‚
 
             for (int i = 0; i < sampleCount; i++)
             {
-                // ½«floatÖµ×ª»»Îª16Î»PCMÖµ
-                // ×¢Òâ£ºfloatÖµ·¶Î§´Ó-1µ½1£¬¶ø16Î»PCMÖµ·¶Î§´Ó-32768µ½32767
-                // Òò´Ë£¬ÎÒÃÇĞèÒª½øĞĞËõ·ÅºÍÆ«ÒÆ
+                // å°†floatå€¼è½¬æ¢ä¸º16ä½PCMå€¼
+                // æ³¨æ„ï¼šfloatå€¼èŒƒå›´ä»-1åˆ°1ï¼Œè€Œ16ä½PCMå€¼èŒƒå›´ä»-32768åˆ°32767
+                // å› æ­¤ï¼Œæˆ‘ä»¬éœ€è¦è¿›è¡Œç¼©æ”¾å’Œåç§»
                 short pcmValue = (short)(floatArray[i] * short.MaxValue);
 
-                // ½«shortÖµ×ª»»Îª×Ö½ÚÊı×é
+                // å°†shortå€¼è½¬æ¢ä¸ºå­—èŠ‚æ•°ç»„
                 byte[] bytes = BitConverter.GetBytes(pcmValue);
 
-                // ×¢Òâ£ºBitConverterµÄ×Ö½ÚË³Ğò¿ÉÄÜÒÀÀµÓÚÏµÍ³¼Ü¹¹£¨´ó¶Ë»òĞ¡¶Ë£©
-                // Èç¹ûĞèÒªÈ·±£×Ö½ÚË³Ğò£¨ÈçÓÃÓÚÍøÂç´«Êä£©£¬Çë¿¼ÂÇÊ¹ÓÃArray.Reverse
-                // ÕâÀï¼ÙÉèÎÒÃÇ²»ĞèÒª¸Ä±ä×Ö½ÚË³Ğò
+                // æ³¨æ„ï¼šBitConverterçš„å­—èŠ‚é¡ºåºå¯èƒ½ä¾èµ–äºç³»ç»Ÿæ¶æ„ï¼ˆå¤§ç«¯æˆ–å°ç«¯ï¼‰
+                // å¦‚æœéœ€è¦ç¡®ä¿å­—èŠ‚é¡ºåºï¼ˆå¦‚ç”¨äºç½‘ç»œä¼ è¾“ï¼‰ï¼Œè¯·è€ƒè™‘ä½¿ç”¨Array.Reverse
+                // è¿™é‡Œå‡è®¾æˆ‘ä»¬ä¸éœ€è¦æ”¹å˜å­—èŠ‚é¡ºåº
 
-                // ½«×Ö½Ú¸´ÖÆµ½½á¹ûÊı×éÖĞ
+                // å°†å­—èŠ‚å¤åˆ¶åˆ°ç»“æœæ•°ç»„ä¸­
                 pcmData[i * 2] = bytes[0];
                 pcmData[i * 2 + 1] = bytes[1];
             }
@@ -168,10 +191,7 @@ namespace LLVoice.Voice
 
         private void OnDestroy()
         {
-            if (isRecording)
-            {
-                StopRecording();
-            }
+            StopRecording();
         }
     }
 
@@ -184,7 +204,7 @@ namespace LLVoice.Voice
 
         public static int[] ChunkSize = new int[] { 5, 10, 5 };
         /// <summary>
-        /// ²ÉÑù¼ä¸ô£¬µ¥Î»ÎªÃë
+        /// é‡‡æ ·é—´éš”ï¼Œå•ä½ä¸ºç§’
         /// </summary>
         public static int ChunkInterval = 10;
 

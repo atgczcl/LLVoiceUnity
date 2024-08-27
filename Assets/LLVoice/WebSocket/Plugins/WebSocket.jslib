@@ -4,6 +4,7 @@ $webSocketInstances: [],
 SocketCreate: function(url)
 {
 	var str = UTF8ToString(url);
+	
 	var socket = {
 		socket: new WebSocket(str),
 		buffer: new Uint8Array(0),
@@ -74,6 +75,7 @@ SocketCreate: function(url)
 		}
 	}
 	var instance = webSocketInstances.push(socket) - 1;
+	socketInstance = socket.socket;
 	return instance;
 },
 
@@ -97,6 +99,12 @@ SocketSend: function (socketInstance, ptr, length)
 {
 	var socket = webSocketInstances[socketInstance];
 	socket.socket.send (HEAPU8.buffer.slice(ptr, ptr+length));
+},
+
+SocketSendArray: function (data)
+{
+	var socket = webSocketInstances[0];
+	socket.socket.send (data);
 },
 
 SocketSendString: function (socketInstance, str)
