@@ -41,8 +41,7 @@ namespace LLVoice.Tools
             DontDestroyOnLoad(gameObject);
             if (!instance)
             {
-                instance = gameObject.GetComponent<T>();
-                if (instance == null) instance = gameObject.AddComponent<T>();
+                if (!gameObject.TryGetComponent<T>(out instance)) instance = gameObject.AddComponent<T>();
             }
         }
     }

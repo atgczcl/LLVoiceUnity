@@ -4,6 +4,7 @@ using System.Text;
 using System.Collections.Generic;
 using System.Collections;
 using WebSocketSharp;
+using System.Security.Policy;
 
 namespace LLVoice.Net
 {
@@ -46,14 +47,15 @@ namespace LLVoice.Net
                 onConnect?.Invoke();
             };
             m_Socket.OnError += (sender, e) => m_Error = e.Message;
-            m_Socket.SslConfiguration.ServerCertificateValidationCallback =
+            if (mUrl.Scheme.Equals("wss"))
+            {
+                m_Socket.SslConfiguration.ServerCertificateValidationCallback =
                   (sender, certificate, chain, sslPolicyErrors) =>
                   {
                       // Do something to validate the server certificate.
-                      //...
-
                       return true; // If the server certificate is valid.
                   };
+            }
             m_Socket.ConnectAsync();
             while (!m_IsConnected && m_Error == null)
                 yield return 0;

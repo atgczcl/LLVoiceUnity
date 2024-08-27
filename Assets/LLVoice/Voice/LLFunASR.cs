@@ -1,5 +1,7 @@
 using LLVoice.Net;
 using LLVoice.Tools;
+using Newtonsoft.Json;
+using Palmmedia.ReportGenerator.Core.Common;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -34,7 +36,6 @@ namespace LLVoice.Voice
             Debug.Log("websocket start test");
             LLWebSocket.Instance.Connect(onConnect: () => {
                 Init();
-                LLMicrophoneRecorderMgr.Instance.Initialized();
             }, onStrMsg:OnMessage);
 
         }
@@ -50,19 +51,25 @@ namespace LLVoice.Voice
         {
             //初始化
             ClientFirstConnOnline();
+            Debug.Log("websocket 初始化完成");
+            LLMicrophoneRecorderMgr.Instance.Initialized();
+            //异步线程无法启动协程
+            //StartCoroutine(test());
         }
 
-        private void Update()
-        {
-            //msgHandler?.DispatchMessages();
-        }
+        //IEnumerator test()
+        //{
+        //    Debug.LogError("测试，测试GG111");
+        //    yield return new WaitForSeconds(3);
+        //    Debug.LogError("测试，测试GG222");
+        //}
 
         /// <summary>
         /// 客户端首次连接消息
         /// </summary>
         /// <param name="asrmode">online, offline, 2pass</param>
         /// <returns></returns>
-        public bool ClientFirstConnOnline(string asrmode = "2pass")
+        public bool ClientFirstConnOnline(string asrmode = "online")
         {
             // 参数说明：
             // `mode`：`offline`，表示推理模式为一句话识别；`online`，表示推理模式为实时语音识别；`2pass`：表示为实时语音识别，并且说话句尾采用离线模型进行纠错。
@@ -74,11 +81,34 @@ namespace LLVoice.Voice
             //`hotwords`：如果使用热词，需要向服务端发送热词数据（字符串），格式为 "{"阿里巴巴":20,"通义实验室":30}"
             //`itn`: 设置是否使用itn，默认True
             // jsonresult={"chunk_interval":10,"chunk_size":[5,10,5],"hotwords":"{\"\\u4f60\\u597d\": 20, \"\\u67e5\\u8be2\": 30}","is_speaking":true,"itn":true,"mode":"2pass","wav_name":"microphone"}, msg_data->msg={"access_num":0,"audio_fs":16000,"is_eof":false,"itn":true,"mode":"2pass","wav_format":"pcm","wav_name":"microphone"}
-            string hotwords = "{{\'你好\':20,\'查询\':30}}";
-            //string hotwords = "阿里巴巴 20\n达摩院 20\n夜雨飘零 20\n";
-            string firstbuff = $"{{\"mode\": \"{asrmode}\", \"chunk_size\": [{chunk_size[0]},{chunk_size[1]},{chunk_size[2]}], \"chunk_interval\": {chunk_interval},\"hotwords\": \"{hotwords}\", \"wav_name\": \"microphone\", \"is_speaking\": true, \"itn\":false}}";
-            LLWebSocket.Instance.Send(firstbuff);
+
+            //string hotwords = "{\'你好\':20,\'查询\':30}";
+            //string firstbuff = $"{{\"mode\": \"{asrmode}\", \"chunk_size\": [{chunk_size[0]},{chunk_size[1]},{chunk_size[2]}], \"chunk_interval\": {chunk_interval},\"hotwords\": \"{hotwords}\", \"wav_name\": \"microphone\", \"is_speaking\": true, \"itn\":false}}";
+            //LLWebSocket.Instance.Send(firstbuff);
             //ClientSendAudioFunc(firstbuff);
+
+
+
+            var hotwords = new Dictionary<string, int>
+            {
+                {"你好", 20},
+                {"查询", 30}
+            };
+
+            var jsonResult = new
+            {
+                chunk_interval = 10,
+                chunk_size = new List<int> { 5, 10, 5 },
+                hotwords = JsonConvert.SerializeObject(hotwords),
+                is_speaking = true,
+                itn = false,
+                mode = asrmode,
+                wav_name = "microphone"
+            };
+
+            string jsonString = JsonConvert.SerializeObject(jsonResult);
+            Debug.Log("Config jsonString: " + jsonString);
+            LLWebSocket.Instance.Send(jsonString);
             return true;
         }
 

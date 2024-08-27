@@ -4,6 +4,8 @@ using UnityEngine;
 using System;
 using LLVoice.Tools;
 using LLVoice.Net;
+using Unity.VisualScripting;
+using System.Threading;
 
 namespace LLVoice.Voice
 {
@@ -17,13 +19,25 @@ namespace LLVoice.Voice
         public AudioClip recordingClip;
         public string microphoneDevice;
         public bool isRecording = false;
+        // 获取当前的SynchronizationContext
+        public SynchronizationContext context = SynchronizationContext.Current;
+
+        public override void Awake()
+        {
+            base.Awake();
+            context = SynchronizationContext.Current;
+        }
 
         ///<summary>
         ///初始化
         ///</summary>
         public void Initialized()
         {
-            StartCoroutine(InitializedMicrophone());
+            Debug.LogError("初始化麦克风");
+            //因为初始化是在websocket连接成功后进行的，在异步中无法调用协程，所以使用InvokeOnMainThread回到主线程执行
+            InvokeOnMainThread(() => {
+                StartCoroutine(InitializedMicrophone());
+            });
         }
 
         ///<summary>
@@ -53,9 +67,10 @@ namespace LLVoice.Voice
 #if !UNITY_WEBGL
                 // 获取麦克风设备列表
                 string[] devices = Microphone.devices;
+                Debug.Log("使用麦克风设备000: " + devices.Length);
                 if (devices.Length > 0)
                 {
-                    microphoneDevice = "";
+                    microphoneDevice = null;
                     Debug.Log("使用麦克风设备: " + microphoneDevice);
                     if (!isRecording)
                     {
@@ -119,18 +134,14 @@ namespace LLVoice.Voice
                             {
                                 count = currentPos - lastSampling;
                                 p = new float[count];
-                                Debug.LogError(1);
                                 Array.Copy(f, lastSampling, p, 0, count);
                             }
                             else
                             {
                                 count = AudioConfig.RATE - lastSampling;
                                 p = new float[count + currentPos];
-                                Debug.LogError(2);
                                 Array.Copy(f, lastSampling, p, 0, count);
-                                Debug.LogError(3);
                                 Array.Copy(f, 0, p, count, currentPos);
-                                Debug.LogError(4);
                                 count += currentPos;
                             }
 
@@ -188,6 +199,35 @@ namespace LLVoice.Voice
             }
         }
 
+        /// <summary>
+        /// 在主线程上执行操作
+        /// </summary>
+        /// <param name="action"></param>
+        public void InvokeOnMainThread(System.Action action)
+        {
+            
+            // 回到主线程
+            context.Post(_ =>
+            {
+                Debug.Log("回到主线程");
+                action?.Invoke();
+            }, null);
+        }
+
+        /// <summary>
+        /// 在主线程上执行协程
+        /// </summary>
+        public void InvokeOnMainThread(IEnumerator enumerator)
+        {
+            // 获取当前的SynchronizationContext
+            var context = SynchronizationContext.Current;
+            // 回到主线程
+            context.Post(_ =>
+            {
+                Debug.Log("回到主线程");
+                StartCoroutine(enumerator);
+            }, null);
+        }
 
         private void OnDestroy()
         {
