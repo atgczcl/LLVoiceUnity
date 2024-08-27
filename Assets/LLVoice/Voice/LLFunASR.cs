@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -53,7 +54,7 @@ namespace LLVoice.Voice
 
         private void Update()
         {
-            if (msgHandler != null) msgHandler.DispatchMessages();
+            //msgHandler?.DispatchMessages();
         }
 
         /// <summary>
@@ -75,8 +76,7 @@ namespace LLVoice.Voice
             // jsonresult={"chunk_interval":10,"chunk_size":[5,10,5],"hotwords":"{\"\\u4f60\\u597d\": 20, \"\\u67e5\\u8be2\": 30}","is_speaking":true,"itn":true,"mode":"2pass","wav_name":"microphone"}, msg_data->msg={"access_num":0,"audio_fs":16000,"is_eof":false,"itn":true,"mode":"2pass","wav_format":"pcm","wav_name":"microphone"}
             string hotwords = "{{\'你好\':20,\'查询\':30}}";
             //string hotwords = "阿里巴巴 20\n达摩院 20\n夜雨飘零 20\n";
-            string firstbuff = $"{{\"mode\": \"{asrmode}\", \"chunk_size\": [{chunk_size[0]},{chunk_size[1]},{chunk_size[2]}], \"chunk_interval\": {chunk_interval},\"hotwords\": \"{hotwords}\", \"wav_name\": \"microphone\", \"is_speaking\": true}}";
-                       //, asrmode, chunk_size[0], chunk_size[1], chunk_size[2], chunk_interval, hotwords);
+            string firstbuff = $"{{\"mode\": \"{asrmode}\", \"chunk_size\": [{chunk_size[0]},{chunk_size[1]},{chunk_size[2]}], \"chunk_interval\": {chunk_interval},\"hotwords\": \"{hotwords}\", \"wav_name\": \"microphone\", \"is_speaking\": true, \"itn\":false}}";
             LLWebSocket.Instance.Send(firstbuff);
             //ClientSendAudioFunc(firstbuff);
             return true;
@@ -105,98 +105,107 @@ namespace LLVoice.Voice
 
     public class MessageHandler
     {
-        private bool offlineMsgDone;
-        private string textPrint="";
-        private string textPrint2PassOnline = "";
-        private string textPrint2PassOffline = "";
-        private int id = 0;
-        private int wordsMaxPrint = 1000;
-
+        private string onlineText = "";
         //public Queue<LLFunMessage> messageQueue = new Queue<LLFunMessage>();
-
         public UnityEvent<string> OnMessageCallback;
 
         public void ReceiveMessages(string message)
         {
-            //string message = ReceiveWebSocketMessage();
-            var meg = JsonUtility.FromJson<LLFunMessage>(message);
-            HandleText(meg);
-            //string text = meg.text;
-            //bool isFinal = meg.is_final;
-            //List<List<long>> timestamp = meg.timestamp;
+            //var meg = JsonUtility.FromJson<LLFunMessage>(message);
+            //HandleText(meg);
 
-            //HandleText(meg, text, timestamp, isFinal);
-            //messageQueue.Enqueue(meg);
+            GetJsonMessage(message);
+        }
 
+        public string offline_text = "";
+        public string rec_text = "";
+        // Method to handle the message
+        public void GetJsonMessage(string jsonMsg)
+        {
+            var data = JsonUtility.FromJson<LLFunMessage>(jsonMsg);
+            Debug.Log("message: " + data.text);
+            string rectxt = data.text;
+            string asrmodel = data.mode;
+            bool is_final = data.is_final;
+            var timestamp = data.timestamp;
+
+            if (asrmodel == "2pass-offline" || asrmodel == "offline")
+            {
+                offline_text += HandleWithTimestamp(rectxt, timestamp);
+                rec_text = offline_text;
+            }
+            else
+            {
+                rec_text += rectxt;
+            }
+
+            //varArea.text = rec_text;
+
+            //Debug.Log("offline_text: " + asrmodel + "," + offline_text);
+            //Debug.Log("rec_text: " + rec_text);
+            UpdateConsoleText(rec_text);
         }
 
         /// <summary>
-        /// 分发消息
+        /// Method to handle the message with timestamps
         /// </summary>
-        public void DispatchMessages()
+        /// <param name="tmptext"></param>
+        /// <param name="tmptime"></param>
+        /// <returns></returns>
+        public string HandleWithTimestamp(string tmptext, List<List<long>> tmptime)
         {
-            //while (messageQueue.Count > 0)
-            //{
-            //    var meg = messageQueue.Dequeue();
-            //    //string text = meg.text;
-            //    //bool isFinal = meg.is_final;
-            //    //List<List<long>> timestamp = meg.timestamp;
-            //    HandleText(meg);
-            //}
-        }
+            //Debug.Log("tmptext: " + tmptext);
+            //Debug.Log("tmptime: " + tmptime);
 
+            if (tmptime == null || tmptime.Count == 0 || string.IsNullOrEmpty(tmptext))
+            {
+                return tmptext;
+            }
+
+            tmptext = Regex.Replace(tmptext, @"[。？，、\?\. ]", ",");
+            var words = tmptext.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            int char_index = 0;
+            var text_withtime = new StringBuilder();
+
+            foreach (var word in words)
+            {
+                if (string.IsNullOrEmpty(word))
+                {
+                    continue;
+                }
+
+                Debug.Log("words===" + word);
+                Debug.Log("words: " + word + ",time=" + tmptime[char_index][0] / 1000f);
+
+                if (Regex.IsMatch(word, @"^[a-zA-Z]+$"))
+                {
+                    text_withtime.Append(tmptime[char_index][0] / 1000f + ":" + word + "\n");
+                    char_index++;
+                }
+                else
+                {
+                    text_withtime.Append(tmptime[char_index][0] / 1000f + ":" + word + "\n");
+                    char_index += word.Length;
+                }
+            }
+
+            return text_withtime.ToString();
+        }
 
         private string recbuff = string.Empty;//接收累计缓存内容
         public void HandleText(LLFunMessage meg)
         {
-            //if (meg.mode == "online")
-            //{
-            //    textPrint += text;
-            //    //textPrint = textPrint.Substring(textPrint.Length - wordsMaxPrint);
-            //    UpdateConsoleText(textPrint);
-            //}
-            //else if (meg.mode == "offline")
-            //{
-            //    if (timestamp != null&& timestamp.Count > 0)
-            //    {
-            //        textPrint += $"{text} timestamp: {timestamp}";
-            //    }
-            //    else
-            //    {
-            //        textPrint += text;
-            //    }
-
-            //    UpdateConsoleText($"Offline: {textPrint}");
-            //    offlineMsgDone = true;
-            //}
-            //else {
-            //    if (meg.mode == "2pass-online")
-            //    {
-            //        textPrint2PassOnline += text;
-            //        textPrint = textPrint2PassOffline + textPrint2PassOnline;
-            //    }
-            //    else
-            //    {
-            //        textPrint2PassOnline = "";
-            //        textPrint = textPrint2PassOffline + text;
-            //        textPrint2PassOffline += text;
-            //    }
-            //    //textPrint = textPrint.Substring(textPrint.Length - wordsMaxPrint);
-            //    UpdateConsoleText($"\r{textPrint}");
-            //}
-
-
             if (meg.mode == "2pass-online")
             {
-                textPrint2PassOnline += meg.text;
-                UpdateConsoleText($"{recbuff}{textPrint2PassOnline}");
+                onlineText += meg.text;
+                UpdateConsoleText($"{recbuff}{onlineText}");
                 //UpdateConsoleText($"{textPrint2PassOnline}");
                 //Console.WriteLine(recbuff + onlinebuff);
             }
             else if (meg.mode == "2pass-offline")
             {
                 recbuff += meg.text;
-                textPrint2PassOnline = string.Empty;
+                onlineText = string.Empty;
                 //Console.WriteLine(recbuff);
             }
 

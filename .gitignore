@@ -72,6 +72,4 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 /ProjectSettings
 /*.vsconfig
-/Assets/WebGLTemplates
-/Assets/WebGLTemplates.meta
 /*.code-workspace
