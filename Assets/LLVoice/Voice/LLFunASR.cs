@@ -25,14 +25,17 @@ namespace LLVoice.Voice
         public int chunk_interval = 10;
         public MessageHandler msgHandler = new();
         public UnityEvent<string> OnMessageCallback;
+        public string websocketUrl = "ws://127.0.0.1:10096/";
+        public string websocketKey = "LLFunASR-test";
 
+        public LLWebSocket websocket;
 
         private void Start()
         {
             //²âÊÔÊä³ö
             msgHandler.OnMessageCallback = OnMessageCallback;
             Debug.Log("websocket start test");
-            LLWebSocket.Instance.Connect(onConnect: () => {
+            websocket = LLWebSocketManager.Instance.AddWebSocket(websocketKey, websocketUrl, onConnect: () => {
                 Init();
             }, onStrMsg:OnMessage);
 
@@ -106,7 +109,7 @@ namespace LLVoice.Voice
 
             string jsonString = JsonConvert.SerializeObject(jsonResult);
             Debug.Log("Config jsonString: " + jsonString);
-            LLWebSocket.Instance.Send(jsonString);
+            LLWebSocketManager.Instance.Send(websocketKey, jsonString);
             return true;
         }
 
@@ -120,7 +123,7 @@ namespace LLVoice.Voice
                 byte[] send = buff.Skip(i).Take(CHUNK).ToArray();
                 //Task.Run(() => client.Send(send));
                 //Thread.Sleep(1);
-                LLWebSocket.Instance.Send(send);
+                websocket.Send(send);
             }
 
             return true;

@@ -8,7 +8,7 @@ namespace LLVoice.Net
     /// <summary>
     /// websocket 封装，屏蔽了不同平台差异, 屏蔽了安全性检查
     /// </summary>
-    public class LLWebSocket : MonoSingleton<LLWebSocket>
+    public class LLWebSocket : MonoBehaviour
     {
         ///<summary>
         ///websocket地址
@@ -33,9 +33,10 @@ namespace LLVoice.Net
         ///<summary>
         ///连接websocket
         ///</summary>
-        public void Connect(Action onConnect = null, Action<string> onStrMsg = null, Action<byte[]> onByteMsg = null)
+        public void Connect(string url, Action onConnect = null, Action<string> onStrMsg = null, Action<byte[]> onByteMsg = null)
         {
             OnConnectCallback = onConnect;
+            this.url = url;
             Uri uri = new(url);
 #if UNITY_WEBGL
             //websocket连接
@@ -82,7 +83,7 @@ namespace LLVoice.Net
 
         public void Close()
         {
-            webSocket.Close();
+            webSocket?.Close();
         }
 
 

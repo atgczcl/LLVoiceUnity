@@ -38,6 +38,10 @@ namespace LLVoice.Voice
             JS_Microphone_Stop();
         }
 
+        /// <summary>
+        /// 暂时不用
+        /// </summary>
+        /// <param name="data"></param>
         public void Received_JS_Microphone_Data(string data)
         {
             // 从 IntPtr 获取数据
@@ -47,7 +51,7 @@ namespace LLVoice.Voice
             Debug.Log("Received bytes: " + data.Length);
 
             // 处理数据
-            LLWebSocket.Instance.Send(bytes);
+            //LLWebSocket.Instance.Send(bytes);
         }
     }
 }

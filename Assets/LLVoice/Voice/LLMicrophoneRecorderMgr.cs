@@ -165,7 +165,7 @@ namespace LLVoice.Voice
         void SendAudioData(byte[] data)
         {
             //Debug.LogError($"发送数据：{data.Length}");
-            LLWebSocket.Instance.Send(data);
+            LLFunASR.Instance.websocket.Send(data);
         }
 
         /// <summary>
