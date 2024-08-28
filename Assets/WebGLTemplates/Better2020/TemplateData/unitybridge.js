@@ -182,7 +182,7 @@ function recProcess(buffer, powerLevel, bufferDuration, bufferSampleRate, newBuf
             sendBuf = sampleBuf.slice(0, chunk_size);
             sampleBuf = sampleBuf.slice(chunk_size, sampleBuf.length);
             // wsconnecter.wsSend(sendBuf);
-            console.info("sendBuf: "+ typeof(sendBuf) + " " + sendBuf.length);
+            // console.info("sendBuf: "+ typeof(sendBuf) + " " + sendBuf.length);
             SocketSendArray(sendBuf);
         }
     }
