@@ -26,7 +26,7 @@ namespace LLVoice.Voice
         public MessageHandler msgHandler = new();
         public UnityEvent<string> OnMessageCallback;
         public string websocketUrl = "ws://127.0.0.1:10096/";
-        public string websocketKey = "LLFunASR-test";
+        public string websocketKey = "LLFunASR-websocket";
 
         public LLWebSocket websocket;
 
@@ -36,6 +36,8 @@ namespace LLVoice.Voice
             msgHandler.OnMessageCallback = OnMessageCallback;
             Debug.Log("websocket start test");
             websocket = LLWebSocketManager.Instance.AddWebSocket(websocketKey, websocketUrl, onConnect: () => {
+                Debug.Log("开始初始化");
+                //默认已经进行了切回主线程处理
                 Init();
             }, onStrMsg:OnMessage);
 

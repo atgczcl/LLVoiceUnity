@@ -8,7 +8,7 @@ namespace LLVoice.Net
     /// <summary>
     /// websocket 封装，屏蔽了不同平台差异, 屏蔽了安全性检查
     /// </summary>
-    public class LLWebSocket : MonoBehaviour
+    public class LLWebSocket : CommonMonoBehaviour
     {
         ///<summary>
         ///websocket地址
@@ -55,7 +55,11 @@ namespace LLVoice.Net
         public void OnConnect()
         {
             Debug.Log("websocket连接成功");
-            OnConnectCallback?.Invoke();
+            //连接成功在异步线程中，需要切换到主线程调用，才能避免无法调用unity方法
+            //其他频繁调用方法，不需要切换到主线程，因为unity方法都是线程安全的，避免频繁切换线程带来的性能消耗
+            InvokeOnMainThread(() => { 
+                OnConnectCallback?.Invoke();
+            });
         }
 
         private void Update()

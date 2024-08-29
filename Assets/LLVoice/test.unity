@@ -199,29 +199,14 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 287341369}
-  - component: {fileID: 287341368}
   - component: {fileID: 287341370}
-  - component: {fileID: 287341371}
   m_Layer: 0
-  m_Name: LLWebSocket
+  m_Name: LLFunASR
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &287341368
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 287341367}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 258dba335557d994aa189c9b6c6ae69d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  url: ws://127.0.0.1:10096/
 --- !u!4 &287341369
 Transform:
   m_ObjectHideFlags: 0
@@ -266,21 +251,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &287341371
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 287341367}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 89d5aa4acbd3d7e4b98603e7cf3a1244, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  recordingClip: {fileID: 0}
-  microphoneDevice: 
-  isRecording: 0
+  websocketUrl: ws://127.0.0.1:10096/
+  websocketKey: LLFunASR-websocket
+  websocket: {fileID: 0}
 --- !u!1 &634860629
 GameObject:
   m_ObjectHideFlags: 0

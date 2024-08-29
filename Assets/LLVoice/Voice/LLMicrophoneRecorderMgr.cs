@@ -33,9 +33,9 @@ namespace LLVoice.Voice
         {
             Debug.Log("初始化麦克风，开始！");
             //因为初始化是在websocket连接成功后进行的，在异步中无法调用协程，所以使用InvokeOnMainThread回到主线程执行
-            InvokeOnMainThread(() => {
-                StartCoroutine(InitializedMicrophone());
-            });
+            //InvokeOnMainThread(() => {
+            //});
+            StartCoroutine(InitializedMicrophone());
         }
 
         ///<summary>
