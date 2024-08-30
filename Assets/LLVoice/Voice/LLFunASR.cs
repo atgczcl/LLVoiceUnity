@@ -16,7 +16,7 @@ namespace LLVoice.Voice
     public class LLFunASR : MonoSingleton<LLFunASR>
     {
         /// <summary>
-        /// ±íÊ¾Á÷Ê½Ä£ĞÍlatencyÅäÖÃ£¬`[5, 10, 5]`£¬±íÊ¾µ±Ç°ÒôÆµÎª600ms£¬²¢ÇÒ»Ø¿´300ms£¬ÓÖ¿´300ms¡£
+        /// è¡¨ç¤ºæµå¼æ¨¡å‹latencyé…ç½®ï¼Œ`[5, 10, 5]`ï¼Œè¡¨ç¤ºå½“å‰éŸ³é¢‘ä¸º600msï¼Œå¹¶ä¸”å›çœ‹300msï¼Œåˆçœ‹300msã€‚
         /// </summary>
         public int[] chunk_size = new int[] { 5, 10, 5 };
         /// <summary>
@@ -32,12 +32,12 @@ namespace LLVoice.Voice
 
         private void Start()
         {
-            //²âÊÔÊä³ö
+            //æµ‹è¯•è¾“å‡º
             msgHandler.OnMessageCallback = OnMessageCallback;
             Debug.Log("websocket start test");
             websocket = LLWebSocketManager.Instance.AddWebSocket(websocketKey, websocketUrl, onConnect: () => {
-                Debug.Log("¿ªÊ¼³õÊ¼»¯");
-                //Ä¬ÈÏÒÑ¾­½øĞĞÁËÇĞ»ØÖ÷Ïß³Ì´¦Àí
+                Debug.Log("å¼€å§‹åˆå§‹åŒ–");
+                //é»˜è®¤å·²ç»è¿›è¡Œäº†åˆ‡å›ä¸»çº¿ç¨‹å¤„ç†
                 Init();
             }, onStrMsg:OnMessage);
 
@@ -45,47 +45,47 @@ namespace LLVoice.Voice
 
         private void OnMessage(string msg)
         {
-            Debug.Log("websocket ÊÕµ½ÏûÏ¢: " + msg);
+            Debug.Log("websocket æ”¶åˆ°æ¶ˆæ¯: " + msg);
             msgHandler.ReceiveMessages(msg);
             //OnMessageCallback?.Invoke(msg);
         }
 
         public void Init()
         {
-            //³õÊ¼»¯
+            //åˆå§‹åŒ–
             ClientFirstConnOnline();
-            Debug.Log("websocket ³õÊ¼»¯Íê³É");
+            Debug.Log("websocket åˆå§‹åŒ–å®Œæˆ");
             LLMicrophoneRecorderMgr.Instance.Initialized();
-            //Òì²½Ïß³ÌÎŞ·¨Æô¶¯Ğ­³Ì
+            //å¼‚æ­¥çº¿ç¨‹æ— æ³•å¯åŠ¨åç¨‹
             //StartCoroutine(test());
         }
 
         //IEnumerator test()
         //{
-        //    Debug.LogError("²âÊÔ£¬²âÊÔGG111");
+        //    Debug.LogError("æµ‹è¯•ï¼Œæµ‹è¯•GG111");
         //    yield return new WaitForSeconds(3);
-        //    Debug.LogError("²âÊÔ£¬²âÊÔGG222");
+        //    Debug.LogError("æµ‹è¯•ï¼Œæµ‹è¯•GG222");
         //}
 
         /// <summary>
-        /// ¿Í»§¶ËÊ×´ÎÁ¬½ÓÏûÏ¢
+        /// å®¢æˆ·ç«¯é¦–æ¬¡è¿æ¥æ¶ˆæ¯
         /// </summary>
         /// <param name="asrmode">online, offline, 2pass</param>
         /// <returns></returns>
         public bool ClientFirstConnOnline(string asrmode = "online")
         {
-            // ²ÎÊıËµÃ÷£º
-            // `mode`£º`offline`£¬±íÊ¾ÍÆÀíÄ£Ê½ÎªÒ»¾ä»°Ê¶±ğ£»`online`£¬±íÊ¾ÍÆÀíÄ£Ê½ÎªÊµÊ±ÓïÒôÊ¶±ğ£»`2pass`£º±íÊ¾ÎªÊµÊ±ÓïÒôÊ¶±ğ£¬²¢ÇÒËµ»°¾äÎ²²ÉÓÃÀëÏßÄ£ĞÍ½øĞĞ¾À´í¡£
-            //`wav_name`£º±íÊ¾ĞèÒªÍÆÀíÒôÆµÎÄ¼şÃû
-            //`wav_format`£º±íÊ¾ÒôÊÓÆµÎÄ¼şºó×ºÃû£¬Ö»Ö§³ÖpcmÒôÆµÁ÷
-            //`is_speaking`£º±íÊ¾¶Ï¾äÎ²µã£¬ÀıÈç£¬vadÇĞ¸îµã£¬»òÕßÒ»Ìõwav½áÊø
-            //`chunk_size`£º±íÊ¾Á÷Ê½Ä£ĞÍlatencyÅäÖÃ£¬`[5, 10, 5]`£¬±íÊ¾µ±Ç°ÒôÆµÎª600ms£¬²¢ÇÒ»Ø¿´300ms£¬ÓÖ¿´300ms¡£
-            //`audio_fs`£ºµ±ÊäÈëÒôÆµÎªpcmÊı¾İÊÇ£¬ĞèÒª¼ÓÉÏÒôÆµ²ÉÑùÂÊ²ÎÊı
-            //`hotwords`£ºÈç¹ûÊ¹ÓÃÈÈ´Ê£¬ĞèÒªÏò·şÎñ¶Ë·¢ËÍÈÈ´ÊÊı¾İ£¨×Ö·û´®£©£¬¸ñÊ½Îª "{"°¢Àï°Í°Í":20,"Í¨ÒåÊµÑéÊÒ":30}"
-            //`itn`: ÉèÖÃÊÇ·ñÊ¹ÓÃitn£¬Ä¬ÈÏTrue
+            // å‚æ•°è¯´æ˜ï¼š
+            // `mode`ï¼š`offline`ï¼Œè¡¨ç¤ºæ¨ç†æ¨¡å¼ä¸ºä¸€å¥è¯è¯†åˆ«ï¼›`online`ï¼Œè¡¨ç¤ºæ¨ç†æ¨¡å¼ä¸ºå®æ—¶è¯­éŸ³è¯†åˆ«ï¼›`2pass`ï¼šè¡¨ç¤ºä¸ºå®æ—¶è¯­éŸ³è¯†åˆ«ï¼Œå¹¶ä¸”è¯´è¯å¥å°¾é‡‡ç”¨ç¦»çº¿æ¨¡å‹è¿›è¡Œçº é”™ã€‚
+            //`wav_name`ï¼šè¡¨ç¤ºéœ€è¦æ¨ç†éŸ³é¢‘æ–‡ä»¶å
+            //`wav_format`ï¼šè¡¨ç¤ºéŸ³è§†é¢‘æ–‡ä»¶åç¼€åï¼Œåªæ”¯æŒpcméŸ³é¢‘æµ
+            //`is_speaking`ï¼šè¡¨ç¤ºæ–­å¥å°¾ç‚¹ï¼Œä¾‹å¦‚ï¼Œvadåˆ‡å‰²ç‚¹ï¼Œæˆ–è€…ä¸€æ¡wavç»“æŸ
+            //`chunk_size`ï¼šè¡¨ç¤ºæµå¼æ¨¡å‹latencyé…ç½®ï¼Œ`[5, 10, 5]`ï¼Œè¡¨ç¤ºå½“å‰éŸ³é¢‘ä¸º600msï¼Œå¹¶ä¸”å›çœ‹300msï¼Œåˆçœ‹300msã€‚
+            //`audio_fs`ï¼šå½“è¾“å…¥éŸ³é¢‘ä¸ºpcmæ•°æ®æ˜¯ï¼Œéœ€è¦åŠ ä¸ŠéŸ³é¢‘é‡‡æ ·ç‡å‚æ•°
+            //`hotwords`ï¼šå¦‚æœä½¿ç”¨çƒ­è¯ï¼Œéœ€è¦å‘æœåŠ¡ç«¯å‘é€çƒ­è¯æ•°æ®ï¼ˆå­—ç¬¦ä¸²ï¼‰ï¼Œæ ¼å¼ä¸º "{"é˜¿é‡Œå·´å·´":20,"é€šä¹‰å®éªŒå®¤":30}"
+            //`itn`: è®¾ç½®æ˜¯å¦ä½¿ç”¨itnï¼Œé»˜è®¤True
             // jsonresult={"chunk_interval":10,"chunk_size":[5,10,5],"hotwords":"{\"\\u4f60\\u597d\": 20, \"\\u67e5\\u8be2\": 30}","is_speaking":true,"itn":true,"mode":"2pass","wav_name":"microphone"}, msg_data->msg={"access_num":0,"audio_fs":16000,"is_eof":false,"itn":true,"mode":"2pass","wav_format":"pcm","wav_name":"microphone"}
 
-            //string hotwords = "{\'ÄãºÃ\':20,\'²éÑ¯\':30}";
+            //string hotwords = "{\'ä½ å¥½\':20,\'æŸ¥è¯¢\':30}";
             //string firstbuff = $"{{\"mode\": \"{asrmode}\", \"chunk_size\": [{chunk_size[0]},{chunk_size[1]},{chunk_size[2]}], \"chunk_interval\": {chunk_interval},\"hotwords\": \"{hotwords}\", \"wav_name\": \"microphone\", \"is_speaking\": true, \"itn\":false}}";
             //LLWebSocket.Instance.Send(firstbuff);
             //ClientSendAudioFunc(firstbuff);
@@ -94,8 +94,8 @@ namespace LLVoice.Voice
 
             var hotwords = new Dictionary<string, int>
             {
-                {"ÄãºÃ", 20},
-                {"²éÑ¯", 30}
+                {"ä½ å¥½", 20},
+                {"æŸ¥è¯¢", 30}
             };
 
             var jsonResult = new
@@ -115,10 +115,10 @@ namespace LLVoice.Voice
             return true;
         }
 
-        public bool ClientSendAudioFunc(byte[] buff)    //ÊµÊ±Ê¶±ğ
+        public bool ClientSendAudioFunc(byte[] buff)    //å®æ—¶è¯†åˆ«
         {
             int wave_buffer_collectfrequency = 16000;
-            ////·¢ËÍÒôÆµÊı¾İ
+            ////å‘é€éŸ³é¢‘æ•°æ®
             int CHUNK = wave_buffer_collectfrequency / 1000 * 60 * chunk_size[1] / chunk_interval;
             for (int i = 0; i < buff.Length; i += CHUNK)
             {
@@ -197,7 +197,7 @@ namespace LLVoice.Voice
                 return tmptext;
             }
 
-            tmptext = Regex.Replace(tmptext, @"[¡££¿£¬¡¢\?\. ]", ",");
+            tmptext = Regex.Replace(tmptext, @"[ã€‚ï¼Ÿï¼Œã€\?\. ]", ",");
             var words = tmptext.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             int char_index = 0;
             var text_withtime = new StringBuilder();
@@ -227,7 +227,7 @@ namespace LLVoice.Voice
             return text_withtime.ToString();
         }
 
-        private string recbuff = string.Empty;//½ÓÊÕÀÛ¼Æ»º´æÄÚÈİ
+        private string recbuff = string.Empty;//æ¥æ”¶ç´¯è®¡ç¼“å­˜å†…å®¹
         public void HandleText(LLFunMessage meg)
         {
             if (meg.mode == "2pass-online")
@@ -244,7 +244,7 @@ namespace LLVoice.Voice
                 //Console.WriteLine(recbuff);
             }
 
-            if (meg.is_final)//Î´½áÊøµ±Ç°Ê¶±ğ
+            if (meg.is_final)//æœªç»“æŸå½“å‰è¯†åˆ«
             {
                 recbuff = string.Empty;
             }
@@ -252,12 +252,12 @@ namespace LLVoice.Voice
 
         private void UpdateConsoleText(string text)
         {
-            // ¸üĞÂ¿ØÖÆÌ¨ÎÄ±¾
-            Debug.Log($"Ê¶±ğ½á¹û: {text}");
+            // æ›´æ–°æ§åˆ¶å°æ–‡æœ¬
+            Debug.Log($"è¯†åˆ«ç»“æœ: {text}");
             OnMessageCallback?.Invoke(text);
         }
 
-        // ¼ÙÉèÕâĞ©ÊôĞÔÒÑ¾­¶¨ÒåºÃ
+        // å‡è®¾è¿™äº›å±æ€§å·²ç»å®šä¹‰å¥½
         public int WordsMaxPrint { get; set; }
     }
 
