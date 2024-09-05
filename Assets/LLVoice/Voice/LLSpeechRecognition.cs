@@ -14,12 +14,12 @@ namespace LLVoice.Voice
     /// </summary>
     public class LLSpeechRecognition
     {
-        public static string AI_Name = "小智";
-        public static string AI_Name_Pinyin = "xiao zhi";
+        public static string AI_Name = "小园";
+        public static string AI_Name_Pinyin = "xiao yuan";
         /// <summary>
         /// 简码
         /// </summary>
-        public static string AI_Name_Short = "XZ";
+        public static string AI_Name_Short = "XY";
 
         /// <summary>
         /// 检查文本是否包含三个属性中的任何一个
@@ -41,12 +41,12 @@ namespace LLVoice.Voice
                 return true;
             }
 
-            // 转换为简码并匹配简码
-            string shortCode = Pinyin.GetInitials(text);
-            if (shortCode.Contains(AI_Name_Short, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
+            // 转换为简码并匹配简码，暂时屏蔽，容易引起匹配混乱
+            // string shortCode = Pinyin.GetInitials(text);
+            // if (shortCode.Contains(AI_Name_Short, StringComparison.OrdinalIgnoreCase))
+            // {
+            //     return true;
+            // }
 
             return false;
         }
@@ -73,6 +73,10 @@ namespace LLVoice.Voice
         /// 唤醒总时间，单位秒，默认10秒
         public string RecognitionTotalTimeName = "LLRecognitionTotalTimeName";
         public string OnIdleLongTimeName = "LLOnIdleLongTimeName";
+        /// <summary>
+        /// 麦克风是否暂停定时器名称
+        /// </summary>
+        public string MicrophonePauseTimeName = "LLMicrophonePauseTimeName";
         /// <summary>
         /// 是否唤醒对话 
         /// </summary>
@@ -149,6 +153,9 @@ namespace LLVoice.Voice
             if (!string.IsNullOrEmpty(message))
             {
                 OnRecogniseCallback?.Invoke(message);
+                //设置麦克风是否暂停, 暂时屏蔽，后面接入TTS以后需要控制麦克风是否可以使用，再自动启用
+                //启用时候还要采用定时处理
+                SetCanSendData(false);
             }
             //后面接入TTS以后需要控制麦克风是否可以使用
             ClearData();
@@ -223,6 +230,19 @@ namespace LLVoice.Voice
             if (!isAwake)
                 OnIdleLongTimeCallback?.Invoke();
             Debug.LogError($"闲置时间长了，清理数据！");
+        }
+
+        /// <summary>
+        /// 设置麦克风是否暂停, 暂时屏蔽，后面接入TTS以后需要控制麦克风是否可以使用，再自动启用
+        ///启用时候还要采用定时处理
+        /// </summary>
+        public void SetCanSendData(bool canSend) {
+            //LLMicrophoneRecorderMgr.Instance.SetCanSendData(canSend);
+            Debug.LogError("设置麦克风暂停, 暂时屏蔽，后面接入TTS以后需要控制麦克风是否可以使用，再自动启用");
+            //启用时候还要采用定时处理, 需要TTS支持
+            // SGTimer.StartTimer(MicrophonePauseTimeName, 15, 1, () => {
+            //    LLMicrophoneRecorderMgr.Instance.SetCanSendData(true);
+            // });
         }
 
     }

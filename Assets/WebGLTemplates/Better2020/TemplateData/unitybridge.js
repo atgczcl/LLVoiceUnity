@@ -51,7 +51,7 @@ var rec = null;
  */
 function Recorder_Start(){
     // Recorder.ConnectEnableWorklet = true
-    Recorder_SendConfig(); // 发送配置数据
+    // Recorder_SendConfig(); // 发送配置数据
     // 录音; 定义录音对象,wav格式
     rec = Recorder({
         type: "pcm",
@@ -100,7 +100,7 @@ function Recorder_SendConfig(){
 }
 
 function getHotwords(){
-    var hotwords="哈哈哈哈 10\n 你好 20\n小智 10测试 20\n";
+    var hotwords="查询 10\n 你好 30\n小园 30\n切换态势 20\n";
 	let val = hotwords;
   
 	console.log("hotwords="+val);
@@ -149,11 +149,22 @@ function Recorder_Stop(){
 }
 
 var socketInstance = null;
+var is_cansend_data = true;
 function SocketSendArray(data)
 {
 	// var socket = socketInstance[0];
-	socketInstance.send (data);
+    if (is_cansend_data)
+	    socketInstance.send (data);
     // socketInstance.SocketSendArray(data);
+}
+
+/**
+ * 是否可以发送数据
+ * @param {boolean} is_cansend 
+ */
+function SetIsCanSendData(is_cansend)
+{
+    is_cansend_data = is_cansend;
 }
 
 /**

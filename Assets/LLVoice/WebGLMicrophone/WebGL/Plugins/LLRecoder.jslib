@@ -10,5 +10,10 @@ mergeInto(LibraryManager.library, {
         Recorder_Stop();
     },
 
+    JS_Microphone_IsCanSendData: function(is_cansend)
+    {
+        SetIsCanSendData(is_cansend);
+    }
+
 });
 

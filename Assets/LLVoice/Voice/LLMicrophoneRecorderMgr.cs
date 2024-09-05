@@ -19,6 +19,7 @@ namespace LLVoice.Voice
         public AudioClip recordingClip;
         public string microphoneDevice;
         public bool isRecording = false;
+        public bool isCanSendData = true;
 
         public override void Awake()
         {
@@ -117,6 +118,7 @@ namespace LLVoice.Voice
             while (isRecording)
             {
                 yield return new WaitForSeconds(0.005f);
+                if (!isCanSendData) continue;
                 //if (!isRecording) continue;部分项目需求成了，你要想什么一些没有，所以是晚安测试没有啊，你这边查询的不能啊，真是的，我能感受下来都是什么嗯，对对对，有没有你好
                 if (recordingClip != null)
                 {
@@ -198,7 +200,21 @@ namespace LLVoice.Voice
             }
         }
 
-        
+        /// <summary>
+        /// 设置是否可以发送数据
+        /// </summary>
+        public void SetCanSendData(bool canSend)
+        {
+            if (Application.platform == RuntimePlatform.WebGLPlayer)
+            {
+                LLWebGLMicrophone.Instance.JS_SetIsCanSendData(canSend);
+            }
+            else {
+            #if !UNITY_WEBGL
+                isCanSendData = canSend;
+            #endif
+            }
+        }
 
         private void OnDestroy()
         {

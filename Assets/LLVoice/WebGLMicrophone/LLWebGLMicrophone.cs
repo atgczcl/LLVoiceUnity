@@ -15,11 +15,17 @@ namespace LLVoice.Voice
 
         [DllImport("__Internal")]
         private static extern void JS_Microphone_Stop();
+
+        [DllImport("__Internal")]
+        //JS_Microphone_IsCanSendData
+        private static extern void JS_Microphone_IsCanSendData(bool isCanSend);
 #else
 
         private static void JS_Microphone_Start() { }
 
         private static void JS_Microphone_Stop() { }
+
+        private static void JS_Microphone_IsCanSendData(bool isCanSend) { }
 #endif
 
         /// <summary>
@@ -36,6 +42,14 @@ namespace LLVoice.Voice
         public void JS_StopMicrophone()
         {
             JS_Microphone_Stop();
+        }
+
+        /// <summary>
+        /// 设置是否可以发送数据
+        /// </summary>
+        public void JS_SetIsCanSendData(bool isCanSend)
+        {
+            JS_Microphone_IsCanSendData(isCanSend);
         }
 
         /// <summary>
