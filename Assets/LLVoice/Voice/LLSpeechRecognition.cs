@@ -1,10 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Text.RegularExpressions;
 using System;
 using NPinyin;
-using System.Text;
 using UnityEngine.Events;
 using LLVoice.Tools;
 
@@ -70,8 +68,11 @@ namespace LLVoice.Voice
         /// <summary>
         /// 结束
         /// </summary>
-        public string RecognitionEndTimeName = "LLRecognizeHandlerBase";
-        public string OnIdleLongTimeName = "OnIdleLongTimeName";
+        public string RecognitionEndTimeName = "LLRecognitionEndTimeName";
+        /// <summary>
+        /// 唤醒总时间，单位秒，默认10秒
+        public string RecognitionTotalTimeName = "LLRecognitionTotalTimeName";
+        public string OnIdleLongTimeName = "LLOnIdleLongTimeName";
         /// <summary>
         /// 是否唤醒对话 
         /// </summary>
@@ -121,16 +122,15 @@ namespace LLVoice.Voice
                 if (LLSpeechRecognition.ContainsKeyword(text))
                 {
                     //唤醒了，记录唤醒状态，5秒后自动关闭
-                    isAwake = true;
-                    isSpeaking = true;
-                    recognition_text = "";
+                    SetIsAwake(true);
+                    SetIsSpeaking(true);
                     SetIdleLongTimeState(false);
-                    //这种情况会发生在唤醒后，又接收不到其他消息，此时需要关闭唤醒状态，默认等待5秒
-                    SGTimer.StartTimer(RecognitionEndTimeName, 5, 1, () => {
+                    SetRecognitionTotalTimeState(true);
+                    //这种情况会发生在唤醒后，又接收不到其他消息，此时需要关闭唤醒状态，默认等待10秒
+                    SGTimer.StartTimer(RecognitionEndTimeName, 10, 1, () => {
                         //7秒后关闭了，再次打开需要重新唤醒
                         ShowMessages(recognition_text);
                     });
-                    isAwakeCallback?.Invoke(true);
                 }
                 else
                 {
@@ -145,30 +145,70 @@ namespace LLVoice.Voice
         ///<param name="message"></param>
         public virtual void ShowMessages(string message) {
             Debug.Log($"识别结束】】】】:{message}");
-            isAwake = false;
-            isSpeaking = false;
             //到时间发送收到的消息
-            if (!string.IsNullOrEmpty(message)) { 
+            if (!string.IsNullOrEmpty(message))
+            {
                 OnRecogniseCallback?.Invoke(message);
             }
-            recognition_text = "";
-            isAwakeCallback?.Invoke(false);
-            //发送说话结束的回调
-            OnIsSpeakingCallback?.Invoke(false);
-            //等待3秒后isSpeakingCallback为true, 启动麦克风发送数据
-            SGTimer.StartTimer(RecognitionEndTimeName, 3, 1, () => {
-                OnIsSpeakingCallback?.Invoke(true);
-            });
-            SetIdleLongTimeState(true);
-            Debug.Log(message);
+            //后面接入TTS以后需要控制麦克风是否可以使用
+            ClearData();
         }
 
         /// <summary>
-        /// 发送超长时间闲置状态回调
+        /// 清理数据
+        /// </summary>
+        public virtual void ClearData() {
+            SetIsAwake(false);
+            SetIsSpeaking(false);
+            //等待3秒后启动麦克风，等待唤醒
+            SGTimer.StartTimer(RecognitionEndTimeName, 3, 1, () => {
+                SetIsSpeaking(true);
+            });
+            SetIdleLongTimeState(true);
+            SetRecognitionTotalTimeState(false);
+        }
+
+        /// <summary>
+        /// 发送，设置isAwake状态
+        /// </summary>
+        ///<param name="isAwake"></param>
+        ///<returns></returns>
+        public void SetIsAwake(bool isAwake) {
+            this.isAwake = isAwake;
+            isAwakeCallback?.Invoke(isAwake);
+            recognition_text = "";
+        }
+
+        /// <summary>
+        /// 发送isSpeaking状态
+        /// </summary>
+        /// <param name="isSpeaking"></param>
+        public void SetIsSpeaking(bool isSpeaking) {
+            this.isSpeaking = isSpeaking;
+            //发送说话结束的回调
+            OnIsSpeakingCallback?.Invoke(isSpeaking);
+        }
+
+        /// <summary>
+        /// 定时超过10秒后直接结束对话，发送数据
+        /// </summary>
+        public void SetRecognitionTotalTimeState(bool isRecognitionTotalTime) {
+            if (isRecognitionTotalTime) {
+                SGTimer.StartTimer(RecognitionTotalTimeName, 10, 1, () => {
+                    Debug.LogError($"超总时长10秒了，发送数据：{recognition_text}");
+                    ShowMessages(recognition_text);
+                });
+            }else {
+                SGTimer.Stop(RecognitionTotalTimeName);
+            }
+        }
+
+        /// <summary>
+        /// 发送超长时间闲置状态回调，用于清理数据，防止内存泄漏
         /// </summary>
         public void SetIdleLongTimeState(bool isIdleLongTime) {
             if (isIdleLongTime) {
-                SGTimer.StartTimer(OnIdleLongTimeName, 5, -1, () => {
+                SGTimer.StartTimer(OnIdleLongTimeName, 7, -1, () => {
                     OnIdleLongTime();
                 });
             }else {
