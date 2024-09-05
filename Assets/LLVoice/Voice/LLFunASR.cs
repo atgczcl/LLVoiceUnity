@@ -83,7 +83,7 @@ namespace LLVoice.Voice
         /// </summary>
         /// <param name="asrmode">online, offline, 2pass</param>
         /// <returns></returns>
-        public bool ClientFirstConnOnline(string asrmode = "online")
+        public bool ClientFirstConnOnline(string asrmode = "2pass")
         {
             // 参数说明：
             // `mode`：`offline`，表示推理模式为一句话识别；`online`，表示推理模式为实时语音识别；`2pass`：表示为实时语音识别，并且说话句尾采用离线模型进行纠错。

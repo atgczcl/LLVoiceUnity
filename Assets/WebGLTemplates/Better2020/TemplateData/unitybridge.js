@@ -76,7 +76,7 @@ function Recorder_SendConfig(){
         "is_speaking":  true,
         "chunk_interval":10,
         "itn":false,
-        "mode":"online", // 2pass, online, offline
+        "mode":"2pass", // 2pass, online, offline
         
     };
     // if(isfilemode) //麦克风录音false
