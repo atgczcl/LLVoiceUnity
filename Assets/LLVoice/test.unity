@@ -236,7 +236,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   chunk_size: 050000000a00000005000000
   chunk_interval: 10
-  OnMessageCallback:
+  OnResultCallback:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 634860630}

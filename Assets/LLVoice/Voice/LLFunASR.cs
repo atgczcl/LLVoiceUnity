@@ -23,8 +23,8 @@ namespace LLVoice.Voice
         /// 
         /// </summary>
         public int chunk_interval = 10;
-        public MessageHandler msgHandler = new();
-        public UnityEvent<string> OnMessageCallback;
+        public FunASR_MessageHandler msgHandler;
+        public UnityEvent<string> OnResultCallback;
         public string websocketUrl = "ws://127.0.0.1:10096/";
         public string websocketKey = "LLFunASR-websocket";
 
@@ -32,15 +32,19 @@ namespace LLVoice.Voice
 
         private void Start()
         {
+            if (!TryGetComponent(out msgHandler)) { 
+                msgHandler = gameObject.AddComponent<FunASR_MessageHandler>();
+            }
             //测试输出
-            msgHandler.OnMessageCallback = OnMessageCallback;
+            msgHandler.OnRecogniseCallback = OnResultCallback;
+            msgHandler.OnIsSpeakingCallback = SendIsSpeaking;
+            msgHandler.OnIdleLongTimeCallback = () => { SendIsSpeaking(false); };
             Debug.Log("websocket start test");
             websocket = LLWebSocketManager.Instance.AddWebSocket(websocketKey, websocketUrl, onConnect: () => {
                 Debug.Log("开始初始化");
                 //默认已经进行了切回主线程处理
                 Init();
             }, onStrMsg:OnMessage);
-
         }
 
         private void OnMessage(string msg)
@@ -60,12 +64,19 @@ namespace LLVoice.Voice
             //StartCoroutine(test());
         }
 
-        //IEnumerator test()
-        //{
-        //    Debug.LogError("测试，测试GG111");
-        //    yield return new WaitForSeconds(3);
-        //    Debug.LogError("测试，测试GG222");
-        //}
+        ///<summary>
+        ///发送说话状态
+        ///</summary>
+        ///<param name="isSpeaking"></param>
+        ///<returns></returns>
+        public void SendIsSpeaking(bool isSpeaking)
+        {
+            Debug.Log("isSpeaking:" + isSpeaking);
+            var data = new LLFunSpeakingState { is_speaking = isSpeaking };
+            var json = JsonUtility.ToJson(data);
+            //Debug.Log("SendIsSpeaking: " + json);
+            LLWebSocketManager.Instance.Send(websocketKey, json);
+        }
 
         /// <summary>
         /// 客户端首次连接消息
@@ -134,19 +145,14 @@ namespace LLVoice.Voice
     }
 
 
-
-
-    public class MessageHandler
+    public class FunASR_MessageHandler : LLRecognizeHandlerBase
     {
-        private string onlineText = "";
-        //public Queue<LLFunMessage> messageQueue = new Queue<LLFunMessage>();
-        public UnityEvent<string> OnMessageCallback;
-
-        public void ReceiveMessages(string message)
+        
+        public override void ReceiveMessages(string message)
         {
+            base.ReceiveMessages(message);
             //var meg = JsonUtility.FromJson<LLFunMessage>(message);
             //HandleText(meg);
-
             GetJsonMessage(message);
         }
 
@@ -157,7 +163,7 @@ namespace LLVoice.Voice
         public void GetJsonMessage(string jsonMsg)
         {
             var data = JsonUtility.FromJson<LLFunMessage>(jsonMsg);
-            Debug.Log("message: " + data.text);
+            //Debug.Log("message: " + data.text);
             string rectxt = data.text;
             string asrmodel = data.mode;
             bool is_final = data.is_final;
@@ -173,13 +179,36 @@ namespace LLVoice.Voice
                 online_text += rectxt;
                 rec_text += rectxt;
             }
-
             //varArea.text = rec_text;
-
-            //Debug.Log("offline_text: " + asrmodel + "," + offline_text);
-            //Debug.Log("rec_text: " + rec_text);
-            UpdateConsoleText(online_text);
+            RecogniseString(rec_text, isAwake => { 
+                if (isAwake)
+                {
+                    //唤醒以后清空之前识别的内容
+                    ClearAllText();
+                    Debug.Log("isAwake");
+                }else {
+                    //失去唤醒以后清空之前识别的内容，重新开始等待唤醒
+                    ClearAllText();
+                    Debug.Log("noAwake");
+                }
+            });
         }
+
+        public override void OnIdleLongTime()
+        {
+            base.OnIdleLongTime();
+            ClearAllText();
+        }
+
+        ///<summary>
+        ///清空所有识别内容
+        ///</summary>
+        public void ClearAllText()
+         {
+             offline_text = "";
+             rec_text = "";
+             online_text = "";
+         }
 
         /// <summary>
         /// Method to handle the message with timestamps
@@ -227,38 +256,15 @@ namespace LLVoice.Voice
             return text_withtime.ToString();
         }
 
-        private string recbuff = string.Empty;//接收累计缓存内容
-        public void HandleText(LLFunMessage meg)
+        ///<summary>
+        ///发送is_speaking消息
+        ///</summary>
+        ///<param name="is_speaking"></param>
+        ///<returns></returns>
+        public void SendIsSpeaking(bool is_speaking)
         {
-            if (meg.mode == "2pass-online")
-            {
-                onlineText += meg.text;
-                UpdateConsoleText($"{recbuff}{onlineText}");
-                //UpdateConsoleText($"{textPrint2PassOnline}");
-                //Console.WriteLine(recbuff + onlinebuff);
-            }
-            else if (meg.mode == "2pass-offline")
-            {
-                recbuff += meg.text;
-                onlineText = string.Empty;
-                //Console.WriteLine(recbuff);
-            }
-
-            if (meg.is_final)//未结束当前识别
-            {
-                recbuff = string.Empty;
-            }
+            OnIsSpeakingCallback?.Invoke(is_speaking);
         }
-
-        private void UpdateConsoleText(string text)
-        {
-            // 更新控制台文本
-            Debug.Log($"识别结果: {text}");
-            OnMessageCallback?.Invoke(text);
-        }
-
-        // 假设这些属性已经定义好
-        public int WordsMaxPrint { get; set; }
     }
 
 
@@ -271,6 +277,14 @@ namespace LLVoice.Voice
         public string text;
         public List<List<long>> timestamp;
         public string wav_name;
+    }
+
+    /// <summary>
+    /// 是否在说话
+    /// </summary>
+    [System.Serializable]
+    public class LLFunSpeakingState { 
+           public bool is_speaking = true;
     }
 
     [System.Serializable]
