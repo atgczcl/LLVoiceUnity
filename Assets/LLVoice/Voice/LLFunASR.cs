@@ -1,3 +1,4 @@
+using cscec.IOC;
 using LLVoice.Net;
 using LLVoice.Tools;
 using Newtonsoft.Json;
@@ -7,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -29,22 +31,53 @@ namespace LLVoice.Voice
         public string websocketKey = "LLFunASR-websocket";
 
         public LLWebSocket websocket;
+        public AudioSource audioSource;
+        //播放队列
+        public LLAudioPlayQueue audioPlayQueue;
+
+        public override void Awake()
+        {
+            base.Awake();
+            audioSource = gameObject.GetOrAddComponent<AudioSource>();
+            audioPlayQueue = gameObject.GetOrAddComponent<LLAudioPlayQueue>();
+            audioPlayQueue.audioSource = audioSource;
+        }
 
         private void Start()
         {
-            if (!TryGetComponent(out msgHandler)) { 
-                msgHandler = gameObject.AddComponent<FunASR_MessageHandler>();
-            }
-            //测试输出
-            msgHandler.OnRecogniseCallback = OnResultCallback;
-            msgHandler.OnIsSpeakingCallback = SendIsSpeaking;
-            msgHandler.OnIdleLongTimeCallback = () => { SendIsSpeaking(false); };
-            Debug.Log("websocket start test");
+            Debug.Log("Websocket starting...");
             websocket = LLWebSocketManager.Instance.AddWebSocket(websocketKey, websocketUrl, onConnect: () => {
                 Debug.Log("开始初始化");
                 //默认已经进行了切回主线程处理
                 Init();
             }, onStrMsg:OnMessage);
+            TestTTS();
+        }
+
+        /// <summary>
+        /// TTS http post 请求测试
+        /// </summary>
+        public void TestTTS()
+        {
+            //curl -X POST   "http://127.0.0.1:8080/v1/tts"   -F "text=确保已部署CosyVoice项目，已将 CosyVoice-api中的api.py放入，并成功启动了 api.py。"   -F "spk=中文女"   --output output.wav
+            var url = "http://127.0.0.1:8080/v1/tts";
+            var text = "确保已部署CosyVoice项目，已将 CosyVoice-api中的api.py放入，并成功启动了 api.py。";
+            var spk = "中文女";
+
+            //LLTTSManager.Instance.SendTTSRequest(url, text, spk, handler =>
+            //{
+            //    //SGHTTP.SendTTSRequest(url, text, spk, handler => {
+            //    Debug.Log("TTS 请求成功");
+            //    audioSource.clip = handler;
+            //    audioSource.Play();
+            //}, true);
+
+            SGHTTP.GetTTSStream(clip => { 
+                Debug.Log("TTS 请求成功");
+                if (clip != null) {
+                    audioPlayQueue.Enqueue(clip);
+                }
+            });
         }
 
         private void OnMessage(string msg)
@@ -56,6 +89,15 @@ namespace LLVoice.Voice
 
         public void Init()
         {
+            if (!TryGetComponent(out msgHandler))
+            {
+                msgHandler = gameObject.AddComponent<FunASR_MessageHandler>();
+            }
+            //测试输出
+            msgHandler.OnRecogniseCallback = OnResultCallback;
+            msgHandler.OnIsSpeakingCallback = SendIsSpeaking;
+            msgHandler.OnIdleLongTimeCallback = () => { SendIsSpeaking(false); };
+
             //初始化
             ClientFirstConnOnline();
             Debug.Log("websocket 初始化完成");

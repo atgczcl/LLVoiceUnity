@@ -19,6 +19,7 @@ namespace LLVoice.Net
         /// websocket连接成功回调
         /// </summary>
         public Action OnConnectCallback;
+        public Action<string> OnCloseCallback;
 
         public ILLWebSocket webSocket;
 
@@ -37,20 +38,21 @@ namespace LLVoice.Net
         /// <param name="onConnect">连接成功回调，注：默认已经采用了切回主线程调用，可以调用unity主线程方法</param>
         /// <param name="onStrMsg">收到字符串消息回调, 通过Update发送过来，在主线程</param>
         /// <param name="onByteMsg">收到字节消息回调, 通过Update发送过来，在主线程</param>
-        public void Connect(string url, Action onConnect = null, Action<string> onStrMsg = null, Action<byte[]> onByteMsg = null)
+        public void Connect(string url, Action onConnect = null, Action<string> onStrMsg = null, Action<byte[]> onByteMsg = null, Action<string> OnCloseCall = null)
         {
             OnConnectCallback = onConnect;
+            OnCloseCallback = OnCloseCall;
             this.url = url;
             Uri uri = new(url);
 #if UNITY_WEBGL
             //websocket连接
-            webSocket = new LLWebSocketWebGL(uri);
+            webSocket = new LLWebSocketWebGL(uri, gameObject.name);
 #else
             //非webgl 平台 websocket连接
             webSocket = new LLWebSocketWindows(uri);
 #endif
             webSocket.SetCallBack(onStrMsg, onByteMsg);
-            StartCoroutine(webSocket.Connect(OnConnect));
+            StartCoroutine(webSocket.Connect(OnConnect, OnClose));
         }
 
         /// <summary>
@@ -87,6 +89,15 @@ namespace LLVoice.Net
         public void Send(string msg)
         {
             webSocket.Send(msg);
+        }
+
+        /// <summary>
+        /// OnClose
+        /// </summary>
+        public void OnClose(string errorMsg)
+        {
+            Debug.LogError("websocket连接关闭:" + errorMsg);
+            OnCloseCallback?.Invoke(errorMsg);
         }
 
         public void Close()

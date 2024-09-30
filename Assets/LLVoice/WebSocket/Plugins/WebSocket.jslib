@@ -1,10 +1,11 @@
 var LibraryWebSockets = {
 $webSocketInstances: [],
 
-SocketCreate: function(url)
+SocketCreate: function(url, objName)
 {
 	var str = UTF8ToString(url);
-	
+	var objNameStr = UTF8ToString(objName);
+
 	var socket = {
 		socket: new WebSocket(str),
 		buffer: new Uint8Array(0),
@@ -73,6 +74,7 @@ SocketCreate: function(url)
 				}
 			}
 		}
+		myUnityInstance.SendMessage(objNameStr, "OnClose", socket.error);
 	}
 	var instance = webSocketInstances.push(socket) - 1;
 	socketInstance = socket.socket;

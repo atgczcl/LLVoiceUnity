@@ -11,15 +11,16 @@ namespace LLVoice.Net
     {
         private Uri mUrl;
         /// <summary>
-        /// websocket�յ���Ϣ�ص�
+        /// websocket收到消息回调
         /// </summary>
         public Action<string> OnStringMessageCallback;
         public Action<byte[]> OnByteMessageCallback;
+        public string objName;
 
-        public LLWebSocketWebGL(Uri url)
+        public LLWebSocketWebGL(Uri url, string objName)
         {
             mUrl = url;
-
+            this.objName = objName;
             string protocol = mUrl.Scheme;
             if (!protocol.Equals("ws") && !protocol.Equals("wss"))
                 throw new ArgumentException("Unsupported protocol: " + protocol);
@@ -28,7 +29,7 @@ namespace LLVoice.Net
 
 #if UNITY_WEBGL && !UNITY_EDITOR
 		[DllImport("__Internal")]
-		private static extern int SocketCreate (string url);
+		private static extern int SocketCreate (string url, string objName);
 
 		[DllImport("__Internal")]
 		private static extern int SocketState (int socketInstance);
@@ -82,14 +83,20 @@ namespace LLVoice.Net
 			return buffer;
 		}
 
-		public IEnumerator Connect(Action onConnect = null)
+		public IEnumerator Connect(Action onConnect = null, Action<string> OnCloseCallback = null)
 		{
-			m_NativeRef = SocketCreate (mUrl.ToString());
+			m_NativeRef = SocketCreate (mUrl.ToString(), objName);
 
 			while (SocketState(m_NativeRef) == 0)
 				yield return 0;
             if (SocketState(m_NativeRef) == 1)
                 onConnect?.Invoke();
+        }
+
+        public void OnClose(string errorMsg)
+        {
+            //Debug.LogError("websocket连接关闭:" + errorMsg);
+            //OnCloseCallback?.Invoke(errorMsg);
         }
  
 		public void Close()
@@ -109,7 +116,7 @@ namespace LLVoice.Net
 
         public void Update()
         {
-            //ֻ��webgl��ִ��
+            //只在webgl上执行
             //#if UNITY_WEBGL && !UNITY_EDITOR
             if (SocketState(m_NativeRef) == 1)
             {
@@ -160,7 +167,7 @@ namespace LLVoice.Net
         {
         }
 
-        public IEnumerator Connect(Action onConnect = null)
+        public IEnumerator Connect(Action onConnect = null, Action<string> OnCloseCallback = null)
         {
             Debug.LogError("Editor Run WebGLSocket is not support!");
             yield break;
@@ -194,6 +201,12 @@ namespace LLVoice.Net
         public string RecvString()
         {
             return null;
+        }
+
+        public void OnClose(string errorMsg)
+        {
+            //Debug.LogError("websocket连接关闭:" + errorMsg);
+            //OnCloseCallback?.Invoke(errorMsg);
         }
 
         public void Close()
