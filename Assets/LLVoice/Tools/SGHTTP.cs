@@ -270,7 +270,7 @@ namespace cscec.IOC
 
                     using (var responseStream = await response.Content.ReadAsStreamAsync())
                     {
-                        int bufferSize = 22050;
+                        int bufferSize = 22050*10;
                         byte[] buffer = new byte[bufferSize];
                         List<byte> totalBytes = new List<byte>();
                         int bytesRead;
@@ -279,11 +279,22 @@ namespace cscec.IOC
                             byte[] chunk = new byte[bytesRead];
                             Buffer.BlockCopy(buffer, 0, chunk, 0, bytesRead);
                             totalBytes.AddRange(chunk);
+                            Debug.LogError($"收到数据 length: {chunk.Length}|{responseStream.CanRead}");
                             //onResult?.Invoke(chunk); // 处理每个字节流块
-                            Debug.LogError($"收到数据 length: {chunk.Length}");
+                            //totalBytes长度超过5秒，则处理
+                            if (totalBytes.Count % 4 == 0)
+                            {
+                                onResult?.Invoke(totalBytes.ToArray()); // 处理每个字节流块
+                                totalBytes.Clear();
+                            }
                         }
-                        Debug.LogError($"收到数据 length: {totalBytes.Count}");
-                        onResult?.Invoke(totalBytes.ToArray()); // 处理每个字节流块
+                        Debug.LogError($"收取结束 length: {totalBytes.Count}|{responseStream.CanRead}|{responseStream.CanSeek}");
+                        //Debug.LogError($"收到数据 length: {totalBytes.Count}");
+                        if (totalBytes.Count > 0)
+                        {
+                            //结束播放剩余的数据
+                            onResult?.Invoke(totalBytes.ToArray()); // 处理每个字节流块
+                        }
                     }
                 }
             }

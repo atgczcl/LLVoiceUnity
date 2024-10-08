@@ -48,7 +48,7 @@ public class LLAudioPlayQueue: MonoBehaviour
     {
         while (audioSource.isPlaying)
         {
-            yield return new WaitForSeconds(0.05f);
+            yield return null;
         }
         PlayAudio();
     }
