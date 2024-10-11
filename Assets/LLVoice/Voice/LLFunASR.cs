@@ -2,6 +2,7 @@ using cscec.IOC;
 using LLVoice.Net;
 using LLVoice.Tools;
 using Newtonsoft.Json;
+using SG.AI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.Events;
 
 
@@ -34,6 +36,7 @@ namespace LLVoice.Voice
         public AudioSource audioSource;
         //播放队列
         public LLAudioPlayQueue audioPlayQueue;
+        public string testTTSString = @"中新网北京9月29日电 (记者 高凯)据灯塔专业版数据，截至9月29日14时38分，2024年国庆档(10月1日—10月7日)档期内预售总票房突破1亿元，《749局》《浴火之路》《志愿军：存亡之战》暂列档期预售票房榜前三位。";
 
         public override void Awake()
         {
@@ -51,18 +54,31 @@ namespace LLVoice.Voice
                 //默认已经进行了切回主线程处理
                 Init();
             }, onStrMsg:OnMessage);
-            TestTTS();
+            //TestTTS();
+            SendChatRequest(testTTSString);
+        }
+
+        /// <summary>
+        /// 发送聊天请求
+        /// </summary>
+        public async void SendChatRequest(string text)
+        {
+            await SGOllamaNet.Instance.OllamaAnswer(text, answer =>
+            {
+                Debug.Log("收到回复: " + answer);
+                SendTTS(answer);
+            }, false);
         }
 
         /// <summary>
         /// TTS http post 请求测试
         /// </summary>
-        public void TestTTS()
+        public void SendTTS(string content)
         {
             //curl -X POST   "http://127.0.0.1:8080/v1/tts"   -F "text=确保已部署CosyVoice项目，已将 CosyVoice-api中的api.py放入，并成功启动了 api.py。"   -F "spk=中文女"   --output output.wav
-            var url = "http://127.0.0.1:8080/v1/tts";
-            var text = "确保已部署CosyVoice项目，已将 CosyVoice-api中的api.py放入，并成功启动了 api.py。";
-            var spk = "中文女";
+            //var url = "http://127.0.0.1:8080/v1/tts";
+            //var text = "确保已部署CosyVoice项目，已将 CosyVoice-api中的api.py放入，并成功启动了 api.py。";
+            //var spk = "中文女";
 
             //LLTTSManager.Instance.SendTTSRequest(url, text, spk, handler =>
             //{
@@ -72,7 +88,7 @@ namespace LLVoice.Voice
             //    audioSource.Play();
             //}, true);
 
-            SGHTTP.GetTTSStream(clip => { 
+            LLTTSManager.Instance.GetTTSStream_SFT_Json(content, clip => { 
                 Debug.Log("TTS 请求成功");
                 if (clip != null) {
                     audioPlayQueue.Enqueue(clip);

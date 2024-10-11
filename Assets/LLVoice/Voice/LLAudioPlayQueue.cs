@@ -28,6 +28,12 @@ public class LLAudioPlayQueue: MonoBehaviour
         return audioQueue.Dequeue();
     }
 
+    private void Update()
+    {
+        //是否在播放
+        PlayAudio();
+    }
+
     //依次播放队列里面的音频
     public void PlayAudio()
     {
@@ -41,17 +47,17 @@ public class LLAudioPlayQueue: MonoBehaviour
             audioSource.clip = Dequeue();
             audioSource.Play();
             //定时检测是否播放完毕，播放完毕则继续播放下一个
-            StartCoroutine(CheckAudioPlayEnd());
+            //StartCoroutine(CheckAudioPlayEnd());
         }
     }
-    IEnumerator CheckAudioPlayEnd()
-    {
-        while (audioSource.isPlaying)
-        {
-            yield return null;
-        }
-        PlayAudio();
-    }
+    //IEnumerator CheckAudioPlayEnd()
+    //{
+    //    while (audioSource.isPlaying)
+    //    {
+    //        yield return null;
+    //    }
+    //    PlayAudio();
+    //}
 
     private void OnDestroy()
     {
