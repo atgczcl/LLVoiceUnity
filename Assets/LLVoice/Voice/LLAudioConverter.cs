@@ -7,78 +7,57 @@ using UnityEngine;
 public class LLAudioConverter
 {
     /// <summary>
-    /// ½«AudioClip×ª»»ÎªWAVÎÄ¼ş
+    /// å°†AudioClipè½¬æ¢ä¸ºWAVæ–‡ä»¶
     /// </summary>
-    /// <param name="audioClip">AudioClip¶ÔÏó</param>
-    /// <param name="outputPath">Êä³öÎÄ¼şÂ·¾¶</param>
+    /// <param name="audioClip">è¦è½¬æ¢çš„AudioClipå¯¹è±¡</param>
+    /// <param name="outputPath">è¾“å‡ºWAVæ–‡ä»¶çš„è·¯å¾„</param>
     public static void ConvertAudioClipToWAV(AudioClip audioClip, string outputPath)
     {
-        // »ñÈ¡AudioClipµÄ»ù±¾ĞÅÏ¢
-        int sampleRate = audioClip.frequency;
-        int numSamples = audioClip.samples;
-        int numChannels = audioClip.channels;
-        int bitsPerSample = 16; // UnityÄ¬ÈÏÊ¹ÓÃ16Î»
+        // è·å–AudioClipçš„åŸºæœ¬ä¿¡æ¯
+        int sampleRate = audioClip.frequency; // é‡‡æ ·ç‡
+        int numSamples = audioClip.samples; // æ ·æœ¬æ•°é‡
+        int numChannels = audioClip.channels; // é€šé“æ•°
+        int bitsPerSample = 16; // Unityé»˜è®¤ä½¿ç”¨16ä½
 
-        // »ñÈ¡PCMÊı¾İ
-        float[] samples = new float[numSamples * numChannels];
-        audioClip.GetData(samples, 0);
-
-        // ½«¸¡µãÊı¾İ×ª»»Îª16Î»ÕûÊıÊı¾İ
-        short[] pcmData = new short[samples.Length];
-        for (int i = 0; i < samples.Length; i++)
-        {
-            pcmData[i] = (short)(samples[i] * short.MaxValue);
-        }
-
-        // ´´½¨WAVÎÄ¼ş
-        WriteWavFile(pcmData, sampleRate, numChannels, bitsPerSample, outputPath);
-    }
-
-    /// <summary>
-    /// Ğ´ÈëWAVÎÄ¼ş
-    /// </summary>
-    /// <param name="pcmData">PCMÊı¾İ</param>
-    /// <param name="sampleRate">²ÉÑùÂÊ</param>
-    /// <param name="numChannels">Í¨µÀÊı</param>
-    /// <param name="bitsPerSample">Ã¿Ñù±¾Î»Êı</param>
-    /// <param name="outputPath">Êä³öÎÄ¼şÂ·¾¶</param>
-    private static void WriteWavFile(short[] pcmData, int sampleRate, int numChannels, int bitsPerSample, string outputPath)
-    {
-        int bytesPerSample = bitsPerSample / 8;
-        int bytesPerSecond = sampleRate * numChannels * bytesPerSample;
-        int byteRate = bytesPerSecond * (bitsPerSample / 8);
-        int blockAlign = numChannels * bytesPerSample;
+        // è®¡ç®—PCMæ•°æ®ç›¸å…³å‚æ•°
+        int samples = audioClip.samples;
+        int bytesPerSample = bitsPerSample / 8; // æ¯æ ·æœ¬å­—èŠ‚æ•°
+        int bytesPerSecond = sampleRate * numChannels * bytesPerSample; // æ¯ç§’å­—èŠ‚æ•°
+        int blockAlign = numChannels * bytesPerSample; // å—å¯¹é½
+        int blockSize = samples * numChannels * bytesPerSample; // æ•°æ®å—å¤§å°
 
         using (var stream = new FileStream(outputPath, FileMode.Create))
         {
             using (var writer = new BinaryWriter(stream))
             {
-                // Ğ´ÈëWAVÎÄ¼şÍ·
+                // å†™å…¥WAVæ–‡ä»¶å¤´
                 writer.Write(Encoding.UTF8.GetBytes("RIFF")); // RIFF Chunk ID
-                writer.Write(36 + pcmData.Length * bytesPerSample); // RIFF Chunk Size
-                writer.Write(Encoding.UTF8.GetBytes("WAVE")); // WAVE Format
-                writer.Write(Encoding.UTF8.GetBytes("fmt ")); // Subchunk 1 ID
-                writer.Write(16); // Subchunk 1 Size
-                writer.Write((short)1); // Audio Format (1 = PCM)
-                writer.Write((short)numChannels); // Number of Channels
-                writer.Write(sampleRate); // Sample Rate
-                writer.Write(bytesPerSecond); // Byte Rate
-                writer.Write(blockAlign); // Block Align
-                writer.Write((short)bitsPerSample); // Bits per Sample
-                writer.Write(Encoding.UTF8.GetBytes("data")); // Subchunk 2 ID
-                writer.Write(pcmData.Length * bytesPerSample); // Subchunk 2 Size
+                writer.Write(36 + samples * numChannels * bytesPerSample); // RIFF Chunk Size 
+                writer.Write(Encoding.UTF8.GetBytes("WAVE")); // WAVE æ ¼å¼
+                writer.Write(Encoding.UTF8.GetBytes("fmt ")); // å­å—1 ID
+                writer.Write(16); // å­å—1 å¤§å°
+                writer.Write((ushort)1); // éŸ³é¢‘æ ¼å¼ (1 = PCM)
+                writer.Write((ushort)numChannels); // é€šé“æ•°
+                writer.Write(sampleRate); // é‡‡æ ·ç‡
+                writer.Write(bytesPerSecond); // å­—èŠ‚ç‡
+                writer.Write((ushort)blockAlign); // å—å¯¹é½
+                writer.Write((ushort)bitsPerSample); // æ¯æ ·æœ¬ä½æ•°
+                writer.Write(Encoding.UTF8.GetBytes("data")); // å­å—2 ID
+                writer.Write(blockSize); // æ•°æ®å—å¤§å°
 
-                // Ğ´ÈëPCMÊı¾İ
-                foreach (short sample in pcmData)
+                // å†™å…¥PCMæ•°æ®
+                float[] audioData = new float[samples * numChannels]; // åˆ›å»ºPCMæ•°æ®æ•°ç»„
+                audioClip.GetData(audioData, 0); // è·å–AudioClipä¸­çš„PCMæ•°æ®
+                for (int i = 0; i < samples * numChannels; i++)
                 {
-                    writer.Write(sample);
+                    writer.Write((short)(audioData[i] * short.MaxValue)); // å†™å…¥æ¯ä¸ªæ ·æœ¬æ•°æ®
                 }
             }
         }
     }
 
     /// <summary>
-    /// ½«wavÊı¾İ±£´æµ½ÎÄ¼ş
+    /// å°†wavæ•°æ®ä¿å­˜åˆ°æ–‡ä»¶
     /// </summary>
     /// <param name="wavData"></param>
     /// <param name="filePath"></param>
@@ -88,7 +67,7 @@ public class LLAudioConverter
     }
 
     /// <summary>
-    /// ½«pcmÊı¾İ±£´æµ½ÎÄ¼ş
+    /// å°†pcmæ•°æ®ä¿å­˜åˆ°æ–‡ä»¶
     /// </summary>
     /// <param name="pcmData"></param>
     /// <param name="filePath"></param>
@@ -98,7 +77,7 @@ public class LLAudioConverter
     }
 
     /// <summary>
-    /// ½«pcmÊı¾İ±£´æµ½WavÎÄ¼ş
+    /// å°†pcmæ•°æ®ä¿å­˜åˆ°Wavæ–‡ä»¶
     /// </summary>
     /// <param name="pcmData"></param>
     /// <param name="filePath"></param>
@@ -111,35 +90,105 @@ public class LLAudioConverter
 
     public static void ConvertPcmToWav(byte[] pcmData, string filePath)
     {
-        ConvertAudioClipToWAV(ConvertPCM16ToAudioClip(pcmData, 22050), filePath);
+        //ToWAV(ConvertPCM16ToAudioClip(pcmData, 22050), filePath);
+        PcmToWav(pcmData, 22050, 16, 1, filePath);
     }
 
+    /// <summary>
+    /// å°†PCM16æ•°æ®è½¬æ¢ä¸ºWavæ•°æ®
+    /// </summary>
+    /// <param name="pcmData">å­—èŠ‚æµ</param>
+    /// <param name="sampleRate">22050</param>
+    /// <param name="bitsPerSample">16</param>
+    /// <param name="numChannels">1</param>
+    /// <returns></returns>
+    public static void PcmToWav(byte[] pcmData, int sampleRate, int bitsPerSample, int numChannels, string outputPath)
+    {
+        // è®¡ç®—PCMæ•°æ®ç›¸å…³å‚æ•°
+        int samples = pcmData.Length / (numChannels * bitsPerSample / 8); // æ ·æœ¬æ•°
+        int bytesPerSample = bitsPerSample / 8; // æ¯æ ·æœ¬å­—èŠ‚æ•°
+        int bytesPerSecond = sampleRate * numChannels * bytesPerSample; // æ¯ç§’å­—èŠ‚æ•°
+        int blockAlign = numChannels * bytesPerSample; // å—å¯¹é½
+        int blockSize = samples * numChannels * bytesPerSample; // æ•°æ®å—å¤§å°
+
+        using (var stream = new FileStream(outputPath, FileMode.Create))
+        {
+            using (var writer = new BinaryWriter(stream))
+            {
+                // å†™å…¥WAVæ–‡ä»¶å¤´
+                writer.Write(Encoding.UTF8.GetBytes("RIFF")); // RIFF Chunk ID
+                writer.Write(36 + samples * numChannels * bytesPerSample); // RIFF Chunk Size 
+                writer.Write(Encoding.UTF8.GetBytes("WAVE")); // WAVE æ ¼å¼
+                writer.Write(Encoding.UTF8.GetBytes("fmt ")); // å­å—1 ID
+                writer.Write(16); // å­å—1 å¤§å°
+                writer.Write((ushort)1); // éŸ³é¢‘æ ¼å¼ (1 = PCM)
+                writer.Write((ushort)numChannels); // é€šé“æ•°
+                writer.Write(sampleRate); // é‡‡æ ·ç‡
+                writer.Write(bytesPerSecond); // å­—èŠ‚ç‡
+                writer.Write((ushort)blockAlign); // å—å¯¹é½
+                writer.Write((ushort)bitsPerSample); // æ¯æ ·æœ¬ä½æ•°
+                writer.Write(Encoding.UTF8.GetBytes("data")); // å­å—2 ID
+                writer.Write(blockSize); // æ•°æ®å—å¤§å°
+
+                // å†™å…¥PCMæ•°æ®
+                float[] audioData = ConvertPCM16ToFloatArray(pcmData).ToArray(); // è·å–AudioClipä¸­çš„PCMæ•°æ®
+                for (int i = 0; i < audioData.Length; i++)
+                {
+                    writer.Write((short)(audioData[i] * short.MaxValue)); // å†™å…¥æ¯ä¸ªæ ·æœ¬æ•°æ®
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// å°†PCM16æ•°æ®è½¬æ¢ä¸ºAudioClip
+    /// </summary>
+    /// <param name="pcmData"></param>
+    /// <param name="sampleRate"></param>
+    /// <returns></returns>
     public static AudioClip ConvertPCM16ToAudioClip(byte[] pcmData, int sampleRate)
     {
-        int sampleCount = pcmData.Length / 2; // Ã¿¸öÑù±¾Õ¼ÓÃ2×Ö½Ú
-        float[] floatArray = new float[sampleCount];
+        //int sampleCount = pcmData.Length / 2; // æ¯ä¸ªæ ·æœ¬å ç”¨2å­—èŠ‚
+        //float[] floatArray = new float[sampleCount];
+        List<float> floats = ConvertPCM16ToFloatArray(pcmData);
 
-        int floatSize = sizeof(float);
-        List<float> floats = new List<float>();
-
-        for (int i = 0; i < pcmData.Length; i += floatSize)
-        {
-            // ¼ì²éÊÇ·ñÓĞ×ã¹»µÄ×Ö½ÚÀ´ĞÎ³ÉÒ»¸ö¸¡µãÊı
-            if (i + floatSize > pcmData.Length) break;
-
-            // ½âÎö×Ö½Úµ½¸¡µãÊı
-            float value = BitConverter.ToSingle(pcmData, i);
-            floats.Add(value);
-        }
-
-        // ´´½¨AudioClip
+        // åˆ›å»ºAudioClip
         AudioClip audioClip = AudioClip.Create("PCMClip", floats.Count, 1, sampleRate, false);
         audioClip.SetData(floats.ToArray(), 0);
 
         return audioClip;
     }
 
+    /// <summary>
+    /// å°†PCMæ•°æ®è½¬æ¢ä¸ºfloatæ•°ç»„
+    /// </summary>
+    /// <param name="pcmData"></param>
+    /// <param name="sampleRate"></param>
+    /// <returns></returns>
+    public static List<float> ConvertPCM16ToFloatArray(byte[] pcmData)
+    {
+        int floatSize = sizeof(float);
+        List<float> floats = new();
 
+        for (int i = 0; i < pcmData.Length; i += floatSize)
+        {
+            // æ£€æŸ¥æ˜¯å¦æœ‰è¶³å¤Ÿçš„å­—èŠ‚æ¥å½¢æˆä¸€ä¸ªæµ®ç‚¹æ•°
+            if (i + floatSize > pcmData.Length) break;
+
+            // è§£æå­—èŠ‚åˆ°æµ®ç‚¹æ•°
+            float value = BitConverter.ToSingle(pcmData, i);
+            floats.Add(value);
+        }
+        return floats;
+    }
+
+
+    /// <summary>
+    /// å°†Unityçš„AudioClipè½¬æ¢ä¸ºWAVæ–‡ä»¶
+    /// </summary>
+    /// <param name="audio"></param>
+    /// <param name="path"></param>
+    /// <returns></returns>
     public static bool ToWAV(AudioClip audio, string path)
     {
         try
@@ -152,31 +201,31 @@ public class LLAudioConverter
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    // Ğ´ÈëWAVÎÄ¼şÍ·
+                    // å†™å…¥WAVæ–‡ä»¶å¤´
                     writer.Write(System.Text.Encoding.UTF8.GetBytes("RIFF"));
-                    writer.Write(36 + samples * channels * 2); // ×Ü´óĞ¡£¬16Î»PCMĞèÒª³ËÒÔ2
+                    writer.Write(36 + samples * channels * 2); // æ€»å¤§å°ï¼Œ16ä½PCMéœ€è¦ä¹˜ä»¥2
                     writer.Write(System.Text.Encoding.UTF8.GetBytes("WAVE"));
 
-                    // Ğ´Èë¸ñÊ½¿é
+                    // å†™å…¥æ ¼å¼å—
                     writer.Write(System.Text.Encoding.UTF8.GetBytes("fmt "));
-                    writer.Write(16); // ×Ó¿é´óĞ¡
-                    writer.Write((ushort)1); // PCM¸ñÊ½
-                    writer.Write((ushort)channels); // Í¨µÀÊı
-                    writer.Write(sampleRate); // ²ÉÑùÂÊ
-                    writer.Write(sampleRate * channels * 2); // Ã¿Ãë×Ö½ÚÊı
-                    writer.Write((ushort)(channels * 2)); // Êı¾İ¿é¶ÔÆë
-                    writer.Write((ushort)16); // Ã¿¸öÑù±¾µÄÎ»Êı
+                    writer.Write(16); // å­å—å¤§å°
+                    writer.Write((ushort)1); // PCMæ ¼å¼
+                    writer.Write((ushort)channels); // é€šé“æ•°
+                    writer.Write(sampleRate); // é‡‡æ ·ç‡
+                    writer.Write(sampleRate * channels * 2); // æ¯ç§’å­—èŠ‚æ•°
+                    writer.Write((ushort)(channels * 2)); // æ•°æ®å—å¯¹é½
+                    writer.Write((ushort)16); // æ¯ä¸ªæ ·æœ¬çš„ä½æ•°
 
-                    // Ğ´ÈëÊı¾İ¿é
+                    // å†™å…¥æ•°æ®å—
                     writer.Write(System.Text.Encoding.UTF8.GetBytes("data"));
-                    writer.Write(samples * channels * 2); // Êı¾İ¿é´óĞ¡
+                    writer.Write(samples * channels * 2); // æ•°æ®å—å¤§å°
 
-                    // Ğ´ÈëÒôÆµÊı¾İ
+                    // å†™å…¥éŸ³é¢‘æ•°æ®
                     float[] audioData = new float[samples * channels];
                     audio.GetData(audioData, 0);
                     for (int i = 0; i < audioData.Length; i++)
                     {
-                        short sample = (short)(audioData[i] * short.MaxValue); // ½«¸¡µãÊı×ª»»Îª16Î»ÕûÊı
+                        short sample = (short)(audioData[i] * short.MaxValue); // å°†æµ®ç‚¹æ•°è½¬æ¢ä¸º16ä½æ•´æ•°
                         writer.Write(sample);
                     }
                 }
@@ -185,7 +234,7 @@ public class LLAudioConverter
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"ÒôÆµ±£´æÊ§°Ü: {e.Message}");
+            Debug.LogError($"éŸ³é¢‘ä¿å­˜å¤±è´¥: {e.Message}");
             return false;
         }
     }
