@@ -240,7 +240,7 @@ MonoBehaviour:
   chunk_size: 050000000a00000005000000
   chunk_interval: 10
   msgHandler: {fileID: 0}
-  OnResultCallback:
+  OnResultEvent:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 634860630}

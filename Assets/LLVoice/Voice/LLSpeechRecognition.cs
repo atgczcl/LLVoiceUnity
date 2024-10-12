@@ -55,7 +55,7 @@ namespace LLVoice.Voice
     public class LLRecognizeHandlerBase: CommonMonoBehaviour
     {
         //public Queue<LLFunMessage> messageQueue = new Queue<LLFunMessage>();
-        public UnityEvent<string> OnRecogniseCallback;
+        public UnityEvent<string> OnRecogniseCallback = new();
         public string recognition_text = "";
         /// <summary>
         /// 是否唤醒对话

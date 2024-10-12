@@ -28,7 +28,7 @@ namespace LLVoice.Voice
         /// </summary>
         public int chunk_interval = 10;
         public FunASR_MessageHandler msgHandler;
-        public UnityEvent<string> OnResultCallback;
+        public UnityEvent<string> OnResultEvent = new();
         public string websocketUrl = "ws://127.0.0.1:10096/";
         public string websocketKey = "LLFunASR-websocket";
 
@@ -110,7 +110,7 @@ namespace LLVoice.Voice
                 msgHandler = gameObject.AddComponent<FunASR_MessageHandler>();
             }
             //测试输出
-            msgHandler.OnRecogniseCallback = OnResultCallback;
+            msgHandler.OnRecogniseCallback.AddListener(OnResultCallbacks);
             msgHandler.OnIsSpeakingCallback = SendIsSpeaking;
             msgHandler.OnIdleLongTimeCallback = () => { SendIsSpeaking(false); };
 
@@ -120,6 +120,18 @@ namespace LLVoice.Voice
             LLMicrophoneRecorderMgr.Instance.Initialized();
             //异步线程无法启动协程
             //StartCoroutine(test());
+        }
+
+        /// <summary>
+        /// OnRecogniseCallback
+        /// </summary>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        public void OnResultCallbacks(string result)
+        {
+            Debug.Log("OnResultCallback: " + result);
+            OnResultEvent?.Invoke(result);
+            SendChatRequest(result);
         }
 
         ///<summary>

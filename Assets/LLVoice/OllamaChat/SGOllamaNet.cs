@@ -40,6 +40,8 @@ namespace SG.AI
         /// <returns></returns>
         public async Task OllamaAnswer(string massage, Action<string> onResult, bool isStream = true)
         {
+            if (string.IsNullOrEmpty(massage))return;
+
             Ollama_PacketModelData packet = new Ollama_PacketModelData()
             {
                 model = modelName,

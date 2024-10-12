@@ -14,11 +14,14 @@ using System.Net.Http.Headers;
 using System.Net.Http;
 using Unity.VisualScripting;
 using System.Threading.Tasks;
+using System.Linq;
 
 public class LLTTSManager : MonoSingleton<LLTTSManager>
 {
     public AudioSource audioSource;
     public static bool IsDestroy = false;
+    //RequestIdList
+    public LLTTSRequestStopGenerationBlock RequestIdList = new ();
 
     public override void Awake()
     {
@@ -107,6 +110,11 @@ public class LLTTSManager : MonoSingleton<LLTTSManager>
         });
     }
 
+    /// <summary>
+    /// 服务器没有完善，需要修改代码
+    /// </summary>
+    /// <param name="content"></param>
+    /// <param name="onResult"></param>
     public async void GetTTSStream_Clone(string content, Action<AudioClip> onResult)
     {
         Dictionary<string, string> formData = new();
@@ -257,6 +265,9 @@ public class LLTTSManager : MonoSingleton<LLTTSManager>
                 using (var responseStream = await response.Content.ReadAsStreamAsync())
                 using (var reader = new System.IO.StreamReader(responseStream))
                 {
+                    string request_id = response.Headers.GetValues("X-Request-ID").FirstOrDefault();
+                    //缓存入request_id列表
+                    if (!string.IsNullOrEmpty(request_id))RequestIdList.AddRequestID(request_id);
                     string line;
                     while (!IsDestroy && (line = await reader.ReadLineAsync()) != null)
                     {
@@ -265,10 +276,12 @@ public class LLTTSManager : MonoSingleton<LLTTSManager>
                             //{ "model":"qwen:7b","created_at":"2024-03-27T07:11:33.0059464Z","message":{ "role":"assistant","content":"\n"},"done":false}
                             LLTTSSteamDataBlock responesModelData = JsonConvert.DeserializeObject<LLTTSSteamDataBlock>(line);
                             var data = responesModelData.ToBytes();
-                            Debug.LogError($"收到数据:{data.Length}");
+                            Debug.LogError($"收到数据:{data.Length}|{request_id}");
                             onResult?.Invoke(data);
                         }
                     }
+                    //移除request_id列表， 服务端自动结束，不用发送消息
+                    RequestIdList.RemoveRequestID(request_id);
                 }
             }
         }
@@ -316,11 +329,13 @@ public class LLTTSManager : MonoSingleton<LLTTSManager>
 
     private IEnumerator SendStopGenerationRequest(string url)
     {
+        if (RequestIdList == null || RequestIdList.request_ids.Count == 0) yield break;
         using (UnityWebRequest www = new UnityWebRequest(url, "POST"))
         {
             // 设置请求头
             www.SetRequestHeader("Content-Type", "application/json");
-
+            byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(RequestIdList.ToJson());
+            www.uploadHandler = new UploadHandlerRaw(bodyRaw);
             // 发送请求
             yield return www.SendWebRequest();
 
@@ -372,13 +387,52 @@ public class LLTTSManager : MonoSingleton<LLTTSManager>
         return audioClip;
 
     }
-
-    
-
-    
-    
-
-    
 }
 
 
+public class LLTTSSteamDataBlock
+{
+    public string data;
+
+    //base64编码data转为byte[]
+    public byte[] ToBytes()
+    {
+        return System.Convert.FromBase64String(data);
+    }
+}
+
+/// <summary>
+/// TTS请求生成音频数据块
+/// </summary>
+public class LLTTSRequestStopGenerationBlock {
+    public List<string> request_ids = new();
+
+    public void Clear()
+    {
+        request_ids.Clear();
+    }
+
+    public void AddRequestID(string request_id)
+    {
+        request_ids.Add(request_id);
+    }
+
+    /// <summary>
+    /// remove request_id
+    /// </summary>
+    /// <param name="request_id"></param>
+    /// <returns></returns>
+    public bool RemoveRequestID(string request_id)
+    {
+        return request_ids.RemoveAll((item) => item == request_id) > 0;
+    }
+
+    ///<summary>
+    /// json格式化
+    /// </summary>
+    /// <returns></returns>
+    public string ToJson()
+    {
+        return JsonConvert.SerializeObject(this);
+    }
+}

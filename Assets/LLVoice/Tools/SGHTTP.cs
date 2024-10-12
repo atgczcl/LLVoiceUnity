@@ -201,13 +201,6 @@ namespace cscec.IOC
         }
     }
 
-    public class LLTTSSteamDataBlock { 
-        public string data;
-
-        //base64编码data转为byte[]
-        public byte[] ToBytes() {
-            return System.Convert.FromBase64String(data);
-        }
-    }
+    
 
 }
