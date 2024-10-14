@@ -55,7 +55,7 @@ namespace LLVoice.Voice
                 Init();
             }, onStrMsg:OnMessage);
             //TestTTS();
-            SendChatRequest(testTTSString);
+            //SendChatRequest(testTTSString);
         }
 
         /// <summary>
