@@ -22,6 +22,7 @@ public class LLTTSManager : MonoSingleton<LLTTSManager>
     public static bool IsDestroy = false;
     //RequestIdList
     public LLTTSRequestStopGenerationBlock RequestIdList = new ();
+    public string TTSUrl = "http://127.0.0.1:8080/";
 
     public override void Awake()
     {
@@ -62,7 +63,7 @@ public class LLTTSManager : MonoSingleton<LLTTSManager>
         wwwForm.AddField("text", text);
         wwwForm.AddField("spk", speaker);
 
-        using (var request = UnityWebRequestMultimedia.GetAudioClip($"http://1.94.131.28:19463/tts?text={text}&spk={speaker}", AudioType.WAV))
+        using (var request = UnityWebRequestMultimedia.GetAudioClip($"{TTSUrl}tts?text={text}&spk={speaker}", AudioType.WAV))
         {
             yield return request.SendWebRequest();
             if (request.isDone)
@@ -103,7 +104,7 @@ public class LLTTSManager : MonoSingleton<LLTTSManager>
 
         //formData?.TryAdd("prompt_speech", "yy.wav");
         string jsonData = JsonConvert.SerializeObject(formData);
-        string url = "http://127.0.0.1:8080//inference/stream_sft";
+        string url = $"{TTSUrl}inference/stream_sft";
         await PostTTSStream(url, jsonData, pcmData => {
             AudioClip audioClip = ConvertPCM16ToAudioClip(pcmData, 22050);
             onResult?.Invoke(audioClip);
@@ -130,7 +131,7 @@ public class LLTTSManager : MonoSingleton<LLTTSManager>
         formData?.TryAdd("prompt_text", "确保已部署CosyVoice项目，已将 CosyVoice-api中的api.py放入，并成功启动了 api.py。");
         formData?.TryAdd("prompt_speech", "yy.wav");
         string jsonData = JsonConvert.SerializeObject(formData);
-        string url = "http://127.0.0.1:8080//inference/streamclone";
+        string url = $"{TTSUrl}inference/streamclone";
         await PostTTSStream(url, jsonData, pcmData => {
             AudioClip audioClip = ConvertPCM16ToAudioClip(pcmData, 22050);
             onResult?.Invoke(audioClip);
@@ -151,7 +152,7 @@ public class LLTTSManager : MonoSingleton<LLTTSManager>
         formData?.TryAdd("speed", 0.9f.ToString());
         formData?.TryAdd("isStream", false.ToString());
         string jsonData = JsonConvert.SerializeObject(formData);
-        string url = "http://127.0.0.1:8080/inference/stream_sft_json";
+        string url = $"{TTSUrl}inference/stream_sft_json";
         List<byte> totalPCMData = new();
         await PostTTSStream_Json(url, jsonData, pcmData => {
             AudioClip audioClip = ConvertPCM16ToAudioClip(pcmData, 22050);
@@ -323,7 +324,7 @@ public class LLTTSManager : MonoSingleton<LLTTSManager>
     /// <param name="url"></param>
     public void StopTTSGeneration()
     {
-        string url = "http://127.0.0.1:8080/inference/stop_generation";
+        string url = $"{TTSUrl}inference/stop_generation";
         StartCoroutine(SendStopGenerationRequest(url));
     }
 

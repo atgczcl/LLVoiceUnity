@@ -24,7 +24,7 @@ namespace LLVoice.Net
         /// </summary>
         public Action<string> OnStringMessageCallback;
         public Action<byte[]> OnByteMessageCallback;
-
+        public bool IsConnected { get; set; }
         public LLWebSocketWindows(Uri url)
         {
             mUrl = url;
@@ -157,12 +157,16 @@ namespace LLVoice.Net
                 return m_Error;
             }
         }
+
+        
     }
 
     ///<summary>
     ///LLWebSocket for Windows和WebGL的公共接口，统一函数名
     ///</summary>
-    public interface ILLWebSocket { 
+    public interface ILLWebSocket {
+        bool IsConnected { get; set; }
+
         public void Send(string str);
         public void Send(byte[] buffer);
         public IEnumerator Connect(Action onConnect = null, Action<string> onConnectError = null);

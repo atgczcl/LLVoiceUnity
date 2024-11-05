@@ -16,7 +16,7 @@ namespace LLVoice.Net
         public Action<string> OnStringMessageCallback;
         public Action<byte[]> OnByteMessageCallback;
         public string objName;
-
+        public bool IsConnected { get; set; }
         public LLWebSocketWebGL(Uri url, string objName)
         {
             mUrl = url;

@@ -23,6 +23,12 @@ namespace LLVoice.Net
 
         public ILLWebSocket webSocket;
 
+        ///<summary>
+        /// websocket Á¬½Ó×´Ì¬
+        /// </summary>
+         public bool IsConnected { get { return webSocket != null && webSocket.IsConnected; } }
+
+
         //private void Start()
         //{
         //    Debug.Log("websocket start test");
