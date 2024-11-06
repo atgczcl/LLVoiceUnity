@@ -41,7 +41,8 @@ namespace LLVoice.Voice
         public override void Awake()
         {
             base.Awake();
-            audioSource = gameObject.GetOrAddComponent<AudioSource>();
+            if (!audioSource)
+                audioSource = gameObject.GetOrAddComponent<AudioSource>();
             audioPlayQueue = gameObject.GetOrAddComponent<LLAudioPlayQueue>();
             audioPlayQueue.audioSource = audioSource;
         }
@@ -130,6 +131,10 @@ namespace LLVoice.Voice
         public void OnResultCallbacks(string result)
         {
             Debug.Log("OnResultCallback: " + result);
+            if (string.IsNullOrEmpty(result)) { 
+                return;
+            }
+
             OnResultEvent?.Invoke(result);
             SendChatRequest(result);
         }

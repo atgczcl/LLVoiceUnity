@@ -45,6 +45,7 @@ public class LLAudioPlayQueue: MonoBehaviour
         if (audioQueue.Count > 0)
         {
             audioSource.clip = Dequeue();
+            audioSource.enabled = true;
             audioSource.Play();
             //定时检测是否播放完毕，播放完毕则继续播放下一个
             //StartCoroutine(CheckAudioPlayEnd());
