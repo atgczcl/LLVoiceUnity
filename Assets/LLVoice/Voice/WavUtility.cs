@@ -1,4 +1,3 @@
-using NAudio.Wave;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -485,18 +484,6 @@ public class AudioConverter
         {
             fileStream.Write(headerBytes, 0, headerBytes.Length);
             fileStream.Write(pcmData, 0, pcmData.Length);
-        }
-    }
-
-    public static void ConvertPcmToWavN(byte[] pcmData, int sampleRate, int numChannels, int bitsPerSample, string outputPath)
-    {
-        using (var fileStream = new FileStream(outputPath, FileMode.Create))
-        {
-            var waveFormat = new WaveFormat(sampleRate, bitsPerSample, numChannels);
-            using (var waveFileWriter = new WaveFileWriter(fileStream, waveFormat))
-            {
-                waveFileWriter.Write(pcmData, 0, pcmData.Length);
-            }
         }
     }
 

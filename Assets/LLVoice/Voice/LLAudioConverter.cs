@@ -73,6 +73,7 @@ public class LLAudioConverter
     /// <param name="filePath"></param>
     public static void SavePcmToFile(byte[] pcmData, string filePath)
     {
+        LLAudioConverter.EnsureDirectoryExists(filePath);
         File.WriteAllBytes(filePath, pcmData);
     }
 
@@ -110,7 +111,7 @@ public class LLAudioConverter
         int bytesPerSecond = sampleRate * numChannels * bytesPerSample; // 每秒字节数
         int blockAlign = numChannels * bytesPerSample; // 块对齐
         int blockSize = samples * numChannels * bytesPerSample; // 数据块大小
-
+        EnsureDirectoryExists(outputPath);
         using (var stream = new FileStream(outputPath, FileMode.Create))
         {
             using (var writer = new BinaryWriter(stream))
@@ -238,4 +239,18 @@ public class LLAudioConverter
             return false;
         }
     }
+
+    /// <summary>
+    /// 确保目录存在
+    /// </summary>
+    /// <param name="filePath"></param>
+    public static void EnsureDirectoryExists(string filePath)
+    {
+        string directoryPath = Path.GetDirectoryName(filePath);
+        if (!Directory.Exists(directoryPath))
+        {
+            Directory.CreateDirectory(directoryPath);
+        }
+    }
+
 }

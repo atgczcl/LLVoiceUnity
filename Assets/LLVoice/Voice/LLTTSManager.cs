@@ -4,10 +4,7 @@ using System.IO;
 using System.Collections;
 using LLVoice.Tools;
 using System;
-using System.Net;
-using NAudio.Wave;
 using System.Text;
-using cscec.IOC;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Net.Http.Headers;
@@ -160,6 +157,7 @@ public class LLTTSManager : MonoSingleton<LLTTSManager>
             totalPCMData.AddRange(pcmData);
         });
         string fileName = $"./audio/{DateTime.Now.ToString("yyyyMMddHHmmss")}" ;
+        
         LLAudioConverter.SavePcmToFile(totalPCMData.ToArray(),  fileName + ".pcm");
         //根据时间起名字xxx.wav
         LLAudioConverter.SavePcmToWavFile(totalPCMData.ToArray(), fileName + ".wav");
