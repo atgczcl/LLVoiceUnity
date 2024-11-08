@@ -7,20 +7,20 @@ using static LLVoice.Voice.LLAudioPlayQueue;
 namespace LLVoice.Voice
 {
     /// <summary>
-    /// ÒôÆµ²¥·Å¶ÓÁĞ
+    /// éŸ³é¢‘æ’­æ”¾é˜Ÿåˆ—
     /// </summary>
     public class LLAudioPlayQueue : MonoBehaviour
     {
         /// <summary>
-        /// ²¥·Å¶ÓÁĞÀàĞÍ
+        /// æ’­æ”¾é˜Ÿåˆ—ç±»å‹
         /// </summary>
         public enum AudioPlayQueueType {
             /// <summary>
-            /// Ô¤¼ÓÔØµÄÒôÆµ
+            /// é¢„åŠ è½½çš„éŸ³é¢‘
             /// </summary>
             PreLoad,
             /// <summary>
-            /// ÁÄÌìÖĞµÄÒôÆµ¶ÓÁĞ
+            /// èŠå¤©ä¸­çš„éŸ³é¢‘é˜Ÿåˆ—
             /// </summary>
             Queue,
         }
@@ -30,7 +30,7 @@ namespace LLVoice.Voice
         public AudioSource audioSource;
         public LLPreAudioData preAudioData;
         /// <summary>
-        /// ÊÇ·ñÊÇ¶ÓÁĞ»òÕßÔ¤¼ÓÔØµÄ²¥·Å
+        /// æ˜¯å¦æ˜¯é˜Ÿåˆ—æˆ–è€…é¢„åŠ è½½çš„æ’­æ”¾
         /// </summary>
         public AudioPlayQueueType audioPlayQueueType = AudioPlayQueueType.PreLoad;
 
@@ -43,7 +43,8 @@ namespace LLVoice.Voice
                 return;
             }
             audioQueue.Enqueue(audioClip);
-            PlayQueueAudio();
+            //PlayQueueAudio();
+            Debug.LogError($"æ”¶åˆ°éŸ³é¢‘ {audioPlayQueueType}|{audioSource.isPlaying}|{(audioPlayQueueType == AudioPlayQueueType.Queue && audioSource.isPlaying)}");
         }
 
         public AudioClip Dequeue()
@@ -53,28 +54,59 @@ namespace LLVoice.Voice
 
         private void Update()
         {
-            //ÊÇ·ñÔÚ²¥·Å
-            PlayQueueAudio();
-        }
-
-        //ÒÀ´Î²¥·Å¶ÓÁĞÀïÃæµÄÒôÆµ
-        public void PlayQueueAudio()
-        {
-            //Èç¹ûµ±Ç°ÕıÔÚ²¥·Å£¬»òÕßÊÇÔ¤¼ÓÔØµÄÒôÆµ£¬Ôò²»²¥·Å
-            if (audioPlayQueueType == AudioPlayQueueType.Queue && audioSource.isPlaying)
-            {
-                return;
-            }
-
-            if (audioQueue.Count > 0)
-            {
-                PlayAudio(Dequeue());
-            }
-            audioPlayQueueType = AudioPlayQueueType.Queue;
+            //æ˜¯å¦åœ¨æ’­æ”¾
+            TryPlayQueueAudio();
         }
 
         /// <summary>
-        /// ²¥·ÅÖ¸¶¨clip
+        /// ä¾æ¬¡æ’­æ”¾é˜Ÿåˆ—é‡Œé¢çš„éŸ³é¢‘
+        /// å¦‚æœæ˜¯é˜Ÿåˆ—æ¨¡å¼ï¼Œéœ€è¦åˆ¤æ–­æ˜¯å¦æ­£åœ¨æ’­æ”¾
+        /// </summary>
+        public void TryPlayQueueAudio()
+        {
+            //PreLoadæ¨¡å¼å¯ä»¥ç›´æ¥æ’­æ”¾
+            if (audioPlayQueueType == AudioPlayQueueType.PreLoad)
+            {
+                if (audioQueue.Count > 0)
+                {
+                    PlayAudio(Dequeue());
+                    audioPlayQueueType = AudioPlayQueueType.Queue;  
+                }
+            } 
+            else 
+            {
+                //Queueæ¨¡å¼æ’­æ”¾
+                if (audioSource.isPlaying)
+                {
+                    return;
+                }
+
+                if (audioQueue.Count > 0)
+                {
+                    PlayAudio(Dequeue());
+                    audioPlayQueueType = AudioPlayQueueType.Queue;
+                }
+                else
+                {
+                    audioPlayQueueType = AudioPlayQueueType.PreLoad;
+                }
+            }
+        }
+
+        /// <summary>
+        /// æ’­æ”¾queueé‡Œé¢çš„éŸ³é¢‘
+        /// </summary>
+        public void PlayQueueAudio()
+        {
+            if (audioQueue.Count > 0)
+            {
+                PlayAudio(Dequeue());
+                audioPlayQueueType = AudioPlayQueueType.Queue;  
+            }
+        }
+
+        /// <summary>
+        /// æ’­æ”¾æŒ‡å®šclip
         /// </summary>
         public void PlayAudio(AudioClip audioClip)
         {
@@ -90,7 +122,7 @@ namespace LLVoice.Voice
         }
 
         /// <summary>
-        /// ²¥·ÅÔ¤Éè½»»¥ÒôÆµ
+        /// æ’­æ”¾é¢„è®¾äº¤äº’éŸ³é¢‘
         /// </summary>
         public void PlayPreWakeUpAudio() {
             audioPlayQueueType = AudioPlayQueueType.PreLoad;
@@ -98,23 +130,23 @@ namespace LLVoice.Voice
         }
 
         /// <summary>
-        /// ²¥·ÅÔ¤ÉèÔÙ¼ûÒôÆµ
+        /// æ’­æ”¾é¢„è®¾å†è§éŸ³é¢‘
         /// </summary>
         public void PlayPreByeAudio() {
             audioPlayQueueType = AudioPlayQueueType.PreLoad;
-            PlayAudio(preAudioData.ÔÙ¼û);
+            PlayAudio(preAudioData.å†è§);
         }
 
         /// <summary>
-        /// ²¥·ÅÔ¤Éè»¶Ó­´Ê
+        /// æ’­æ”¾é¢„è®¾æ¬¢è¿è¯
         /// </summary>
         public void PlayPreWelcomeAudio() {
             audioPlayQueueType = AudioPlayQueueType.PreLoad;
-            PlayAudio(preAudioData.»¶Ó­´Ê);
+            PlayAudio(preAudioData.æ¬¢è¿è¯);
         }
 
         /// <summary>
-        /// ¼ì²âÒôÆµ²¥·ÅÍê±Ï
+        /// æ£€æµ‹éŸ³é¢‘æ’­æ”¾å®Œæ¯•
         /// </summary>
         /// <returns></returns>
         IEnumerator CheckAudioPlayEnd()
@@ -133,38 +165,38 @@ namespace LLVoice.Voice
     }
 
     /// <summary>
-    /// Ô¤ÖÃÒôÆµÀà
+    /// é¢„ç½®éŸ³é¢‘ç±»
     /// </summary>
     [System.Serializable]
     public class LLPreAudioData { 
-        public AudioClip »¶Ó­´Ê;
-        public AudioClip ÔÙ¼û;
-        public AudioClip ÇëËµ;
-        public AudioClip ÇëÎÊ;
-        public AudioClip ÎÒÔÚ;
-        public AudioClip ÓĞÊ²Ã´°ïÖú;
+        public AudioClip æ¬¢è¿è¯;
+        public AudioClip å†è§;
+        public AudioClip è¯·è¯´;
+        public AudioClip è¯·é—®;
+        public AudioClip æˆ‘åœ¨;
+        public AudioClip æœ‰ä»€ä¹ˆå¸®åŠ©;
 
 
         /// <summary>
-        /// Ëæ»ú»ñÈ¡£¬ÇëËµ£¬ÎÒÔÚ£¬ÓĞÊ²Ã´°ïÖú£¬ÇëÎÊËÄ¸ö½»»¥ÓïÒô
-        /// Ä¬ÈÏÎÒÔÚ£¬ÎÒÔÚÆµÂÊÌá¸ß
+        /// éšæœºè·å–ï¼Œè¯·è¯´ï¼Œæˆ‘åœ¨ï¼Œæœ‰ä»€ä¹ˆå¸®åŠ©ï¼Œè¯·é—®å››ä¸ªäº¤äº’è¯­éŸ³
+        /// é»˜è®¤æˆ‘åœ¨ï¼Œæˆ‘åœ¨é¢‘ç‡æé«˜
         /// </summary>
         public AudioClip GetRandomWakeUpAudio()
         {
-            //0-5ÎÒÔÚÌá¸ßÆµÂÊ
+            //0-5æˆ‘åœ¨æé«˜é¢‘ç‡
             int index = Random.Range(0, 5);
             switch (index)
             {
                 case 0:
-                    return ÇëËµ;
+                    return è¯·è¯´;
                 case 1:
-                    return ÎÒÔÚ;
+                    return æˆ‘åœ¨;
                 case 2:
-                    return ÓĞÊ²Ã´°ïÖú;
+                    return æœ‰ä»€ä¹ˆå¸®åŠ©;
                 case 3:
-                    return ÇëÎÊ;
+                    return è¯·é—®;
                 default:
-                    return ÎÒÔÚ;
+                    return æˆ‘åœ¨;
             }
         }
     }
