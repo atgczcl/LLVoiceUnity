@@ -1,4 +1,5 @@
 using cscec.IOC;
+using LLVoice.LLM;
 using LLVoice.Net;
 using LLVoice.Tools;
 using Newtonsoft.Json;
@@ -49,7 +50,7 @@ namespace LLVoice.Voice
             }
         }
 
-        private void Start()
+        public void Start()
         {
             Debug.Log("Websocket starting...");
             websocket = LLWebSocketManager.Instance.AddWebSocket(websocketKey, websocketUrl, onConnect: () => {
@@ -64,13 +65,19 @@ namespace LLVoice.Voice
         /// <summary>
         /// 发送聊天请求
         /// </summary>
-        public async void SendChatRequest(string text)
+        public void SendChatRequest(string text)
         {
-            await SGOllamaNet.Instance.OllamaAnswer(text, answer =>
+            //await SGOllamaNet.Instance.OllamaAnswer(text, answer =>
+            //{
+            //    Debug.Log("收到回复: " + answer);
+            //    SendTTS(answer);
+            //}, false);
+            LLMManager.Instance.llmOpenAI.PostMsg(text, answer =>
             {
                 Debug.Log("收到回复: " + answer);
                 SendTTS(answer);
-            }, false);
+                OnResultEvent?.Invoke(answer);
+            });
         }
 
         /// <summary>
@@ -123,9 +130,6 @@ namespace LLVoice.Voice
             Debug.Log("websocket 初始化完成");
             LLMicrophoneRecorderMgr.Instance.Initialized();
             audioPlayQueue.PlayPreWelcomeAudio();
-
-            //异步线程无法启动协程
-            //StartCoroutine(test());
         }
 
         public void OnIsWakeUp(bool isWakeUp)
@@ -136,6 +140,15 @@ namespace LLVoice.Voice
                 Debug.Log("唤醒");
                 audioPlayQueue.PlayPreWakeUpAudio();
             }
+        }
+
+        /// <summary>
+        /// 打断上一个会话，停止TTS语音合成，并停止聊天请求
+        /// </summary>
+        public void InterruptChat()
+        {
+            audioPlayQueue.Stop();
+            SGOllamaNet.Instance.StopChat();
         }
 
         /// <summary>

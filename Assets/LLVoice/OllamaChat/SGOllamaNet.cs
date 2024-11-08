@@ -90,6 +90,11 @@ namespace SG.AI
                 }
             }
         }
+
+        internal void StopChat()
+        {
+            
+        }
     }
 
     /// <summary>

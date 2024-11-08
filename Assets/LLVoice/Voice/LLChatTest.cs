@@ -1,6 +1,7 @@
 using LLVoice.Voice;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,7 +10,7 @@ namespace LLVoice
 
     public class LLChatTest : MonoBehaviour
     {
-        public InputField inputField;
+        public TMPro.TMP_InputField inputField;
 
 
         public void SendGenAudioWavMsg()

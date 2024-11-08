@@ -162,6 +162,13 @@ namespace LLVoice.Voice
         {
             StopAllCoroutines();
         }
+
+        internal void Stop()
+        {
+            audioQueue.Clear();
+            audioPlayQueueType = AudioPlayQueueType.PreLoad;
+            audioSource.Stop();
+        }
     }
 
     /// <summary>
