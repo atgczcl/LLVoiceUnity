@@ -138,6 +138,7 @@ namespace LLVoice.Voice
             {
                 //唤醒
                 Debug.Log("唤醒");
+                InterruptChat();
                 audioPlayQueue.PlayPreWakeUpAudio();
             }
         }
@@ -147,8 +148,9 @@ namespace LLVoice.Voice
         /// </summary>
         public void InterruptChat()
         {
+            LLTTSManager.Instance.StopTTSGeneration();
             audioPlayQueue.Stop();
-            SGOllamaNet.Instance.StopChat();
+            LLMManager.Instance.StopChat();
         }
 
         /// <summary>

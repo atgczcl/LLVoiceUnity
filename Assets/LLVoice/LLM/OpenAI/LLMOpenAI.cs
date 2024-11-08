@@ -96,6 +96,11 @@ namespace LLVoice.LLM
             }
         }
 
+        internal static void StopChat()
+        {
+            
+        }
+
         #region Êý¾Ý°ü
 
         [Serializable]

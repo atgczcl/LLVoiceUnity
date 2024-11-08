@@ -2378,9 +2378,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1978785058}
-        m_TargetAssemblyTypeName: LLTTSManager, Assembly-CSharp
-        m_MethodName: StopTTSGeneration
+      - m_Target: {fileID: 287341370}
+        m_TargetAssemblyTypeName: LLVoice.Voice.LLFunASR, Assembly-CSharp
+        m_MethodName: InterruptChat
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
