@@ -57,7 +57,6 @@ namespace SG.AI
                 stream = isStream,
             };
 
-            //string url = "http://localhost:8080/sse_endpoint"; // SSE endpoint URL
             string content = JsonConvert.SerializeObject(packet);
             using (HttpClient client = new HttpClient())
             {

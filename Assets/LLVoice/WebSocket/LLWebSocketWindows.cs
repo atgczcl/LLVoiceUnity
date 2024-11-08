@@ -24,7 +24,7 @@ namespace LLVoice.Net
         /// </summary>
         public Action<string> OnStringMessageCallback;
         public Action<byte[]> OnByteMessageCallback;
-        public bool IsConnected { get; set; }
+        public bool IsConnected { get { return m_IsConnected; } set { m_IsConnected = value; } }
         public LLWebSocketWindows(Uri url)
         {
             mUrl = url;
@@ -44,8 +44,8 @@ namespace LLVoice.Net
             m_Socket = new WebSocketSharp.WebSocket(mUrl.ToString());
             m_Socket.WaitTime = TimeSpan.FromSeconds(5);
             m_Socket.OnMessage += (sender, e) => OnWebSocketMessage(e);
-            m_Socket.OnOpen += (sender, e) => { 
-                m_IsConnected = true; 
+            m_Socket.OnOpen += (sender, e) => {
+                IsConnected = true; 
                 onConnect?.Invoke();
                 Debug.Log("OnWebSocketOpen: " + e);
             };
@@ -65,11 +65,12 @@ namespace LLVoice.Net
             m_Socket.OnClose += (sender, e) => { 
                 string errorMsg = $"OnWebSocketClose: code={e.Code}|reason={e.Reason}|WasClean={e.WasClean}";
                 Debug.LogError(errorMsg);
+                IsConnected = false;
                 onConnectError?.Invoke(errorMsg);
                 OnClose(errorMsg);
             };
             m_Socket.ConnectAsync();
-            while (!m_IsConnected && m_Error == null)
+            while (!IsConnected && m_Error == null)
                 yield return 0;
             
         }

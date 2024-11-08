@@ -44,7 +44,7 @@ namespace LLVoice.Net
         /// <param name="onConnect">连接成功回调，注：默认已经采用了切回主线程调用，可以调用unity主线程方法</param>
         /// <param name="onStrMsg">收到字符串消息回调, 通过Update发送过来，在主线程</param>
         /// <param name="onByteMsg">收到字节消息回调, 通过Update发送过来，在主线程</param>
-        public void Connect(string url, Action onConnect = null, Action<string> onStrMsg = null, Action<byte[]> onByteMsg = null, Action<string> OnCloseCall = null)
+        public void Connect(string url, Action onConnect = null, Action<string> onStrMsg = null, Action<byte[]> onByteMsg = null, Action<string> OnCloseCall = null, float reconnnectTime = 5)
         {
             OnConnectCallback = onConnect;
             OnCloseCallback = OnCloseCall;
@@ -58,13 +58,28 @@ namespace LLVoice.Net
             webSocket = new LLWebSocketWindows(uri);
 #endif
             webSocket.SetCallBack(onStrMsg, onByteMsg);
-            StartCoroutine(webSocket.Connect(OnConnect, OnClose));
+            StartCoroutine(webSocket.Connect(OnConnected, OnClose));
+
+            //定时器每10秒检测一次，进行断线重连处理
+            SGTimer.StartTimer("LLWebSocket_CheckReconnect", reconnnectTime, -1, CheckReconnect);
+        }
+
+        /// <summary>
+        /// 定时器每10秒检测一次，进行断线重连处理
+        /// </summary>
+        private void CheckReconnect()
+        {
+            if (!IsConnected && webSocket != null)
+            {
+                Debug.Log("websocket断线重连");
+                StartCoroutine(webSocket.Connect(OnConnected, OnClose));
+            }
         }
 
         /// <summary>
         /// websocket连接成功回调
         /// <summary>
-        public void OnConnect()
+        public void OnConnected()
         {
             Debug.Log("websocket连接成功");
             //连接成功在异步线程中，需要切换到主线程调用，才能避免无法调用unity方法

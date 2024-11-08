@@ -13,6 +13,7 @@ using Unity.VisualScripting;
 using System.Threading.Tasks;
 using System.Linq;
 
+
 public class LLTTSManager : MonoSingleton<LLTTSManager>
 {
     public AudioSource audioSource;
@@ -20,6 +21,7 @@ public class LLTTSManager : MonoSingleton<LLTTSManager>
     //RequestIdList
     public LLTTSRequestStopGenerationBlock RequestIdList = new ();
     public string TTSUrl = "http://127.0.0.1:8080/";
+    public string key;
 
     public override void Awake()
     {
@@ -128,8 +130,8 @@ public class LLTTSManager : MonoSingleton<LLTTSManager>
         formData?.TryAdd("prompt_text", "确保已部署CosyVoice项目，已将 CosyVoice-api中的api.py放入，并成功启动了 api.py。");
         formData?.TryAdd("prompt_speech", "yy.wav");
         string jsonData = JsonConvert.SerializeObject(formData);
-        string url = $"{TTSUrl}inference/streamclone";
-        await PostTTSStream(url, jsonData, pcmData => {
+        var Url = $"{TTSUrl}inference/streamclone";
+        await PostTTSStream(Url, jsonData, pcmData => {
             AudioClip audioClip = ConvertPCM16ToAudioClip(pcmData, 22050);
             onResult?.Invoke(audioClip);
         });
@@ -151,16 +153,38 @@ public class LLTTSManager : MonoSingleton<LLTTSManager>
         string jsonData = JsonConvert.SerializeObject(formData);
         string url = $"{TTSUrl}inference/stream_sft_json";
         List<byte> totalPCMData = new();
+        //await
+//         PostTTSStream_Json_unity(url, jsonData, pcmData => {
+//            AudioClip audioClip = ConvertPCM16ToAudioClip(pcmData, 22050);
+//            onResult?.Invoke(audioClip);
+//            totalPCMData.AddRange(pcmData);
+//        }, () => {
+//            //非webgl平台才能保存
+//#if !UNITY_WEBGL
+
+//            //保存pcm文件
+//            string fileName = $"./audio/{DateTime.Now.ToString("yyyyMMddHHmmss")}";
+//            LLAudioConverter.SavePcmToFile(totalPCMData.ToArray(), fileName + ".pcm");
+//            //根据时间起名字xxx.wav
+//            LLAudioConverter.SavePcmToWavFile(totalPCMData.ToArray(), fileName + ".wav");
+//#endif
+//        });
+
+
         await PostTTSStream_Json(url, jsonData, pcmData => {
             AudioClip audioClip = ConvertPCM16ToAudioClip(pcmData, 22050);
             onResult?.Invoke(audioClip);
             totalPCMData.AddRange(pcmData);
         });
-        string fileName = $"./audio/{DateTime.Now.ToString("yyyyMMddHHmmss")}" ;
-        
-        LLAudioConverter.SavePcmToFile(totalPCMData.ToArray(),  fileName + ".pcm");
+        //非webgl平台才能保存
+#if !UNITY_WEBGL
+
+        //保存pcm文件
+        string fileName = $"./audio/{DateTime.Now.ToString("yyyyMMddHHmmss")}";
+        LLAudioConverter.SavePcmToFile(totalPCMData.ToArray(), fileName + ".pcm");
         //根据时间起名字xxx.wav
         LLAudioConverter.SavePcmToWavFile(totalPCMData.ToArray(), fileName + ".wav");
+#endif
     }
 
     /// <summary>
@@ -246,6 +270,13 @@ public class LLTTSManager : MonoSingleton<LLTTSManager>
         }
     }
 
+    /// <summary>
+    /// 合并并分离数据, 分离出完整的音频数据块
+    /// </summary>
+    /// <param name="apiURL"></param>
+    /// <param name="jsonData"></param>
+    /// <param name="onResult"></param>
+    /// <returns></returns>
     public async Task PostTTSStream_Json(string apiURL, string jsonData, Action<byte[]> onResult)
     {
         using (HttpClient client = new HttpClient())
@@ -286,7 +317,141 @@ public class LLTTSManager : MonoSingleton<LLTTSManager>
         }
     }
 
+    public void PostTTSStream_Json_unity(string apiURL, string jsonData, Action<byte[]> onResult, Action onCompletion)
+    {
+        //Url = apiURL;
+        var co = PostCoroutine_EventStream(apiURL, jsonData, 
+            (isSuccess) => { },
+             (code, data) => 
+             {
+                 onResult?.Invoke(data.ToBytes());
+             }, () => 
+             {
+                 onCompletion?.Invoke();
+             });
+    }
 
+    #region POST Event Stream
+
+
+    /// <summary>
+    /// Implements a post request as a coroutine, with the reception method as event streams <see href="https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#Event_stream_format"/>
+    /// </summary>
+    /// <returns></returns>
+    protected Coroutine PostCoroutine_EventStream(string apiURL, string request, Action<bool> onRequestStatus, Action<int, LLTTSSteamDataBlock> onPartialResult, Action onCompletion = null)
+    {
+        return StartCoroutine(PostEventStreamRoutine());
+
+        IEnumerator PostEventStreamRoutine()
+        {
+            UnityWebRequest response = null;
+            yield return StartCoroutine(PostRequestCoroutine(apiURL, request, (res) => response = res));
+            bool IsSuccess = response.result == UnityWebRequest.Result.Success;
+            if (response == null) onRequestStatus(IsSuccess);
+            else onRequestStatus(IsSuccess);
+
+            if (response != null && response.result == UnityWebRequest.Result.Success)
+            {
+                Task ReadStreamTask = ReadEventStreamAsync(response, onPartialResult, onCompletion);
+                while (!ReadStreamTask.IsCompleted) yield return new WaitForEndOfFrame();
+            }
+        }
+    }
+
+    private async Task ReadEventStreamAsync(UnityWebRequest response, Action<int, LLTTSSteamDataBlock> onPartialResult, Action onCompletion)
+    {
+        using (Stream stream = new MemoryStream(response.downloadHandler.data))
+        {
+            int index = 0;
+
+            using (StreamReader reader = new StreamReader(stream))
+            {
+                string request_id = response.GetResponseHeader("X-Request-ID");
+                //缓存入request_id列表
+                if (!string.IsNullOrEmpty(request_id)) RequestIdList.AddRequestID(request_id);
+                string line;
+                while (!IsDestroy && (line = await reader.ReadLineAsync()) != null)
+                {
+                    //if (line.StartsWith("data: ")) line = line.Substring("data: ".Length);
+
+                    //if (line == "[DONE]")
+                    //{
+                    //    if (onCompletion != null) onCompletion();
+                    //    return;
+                    //}
+                    //else if (!string.IsNullOrWhiteSpace(line))
+                    //{
+                    //    index++;
+                    //    JsonObject obj = JsonDeserializer.FromJson(line.Trim());
+                    //    TResponse streamedResult = new TResponse();
+                    //    streamedResult.FromJson(obj);
+
+                    //    onPartialResult(index, streamedResult);
+                    //}
+
+                    
+                    if (!string.IsNullOrWhiteSpace(line))
+                    {
+                        LLTTSSteamDataBlock responesModelData = JsonConvert.DeserializeObject<LLTTSSteamDataBlock>(line);
+                        //var data = responesModelData.ToBytes();
+                        Debug.LogError($"收到数据:{line.Length}|{request_id}");
+                        //onResult?.Invoke(data);
+                        onPartialResult(index, responesModelData);
+                    }
+                    //移除request_id列表， 服务端自动结束，不用发送消息
+                    RequestIdList.RemoveRequestID(request_id);
+
+                }
+            }
+        }
+        onCompletion?.Invoke();
+    }
+
+    private IEnumerator PostRequestCoroutine(string apiURL, string jsonData, Action<UnityWebRequest> onResponse)
+    {
+        //Task<UnityWebRequest> responseTask = PostRequestAsync(apiURL, jsonData);
+        UnityWebRequest client = UnityWebRequest.PostWwwForm(apiURL, string.Empty);
+        PopulateAuthHeaders(client);
+
+        AddJsonToUnityWebRequest(client, jsonData);
+
+        yield return client.SendWebRequest();
+        client.uploadHandler.Dispose();
+        yield return new WaitForEndOfFrame();
+        UnityWebRequest response = client;
+        onResponse(response);
+    }
+
+    private async Task<UnityWebRequest> PostRequestAsync(string apiURL, string jsonData)
+    {
+        UnityWebRequest client = UnityWebRequest.PostWwwForm(apiURL, string.Empty);
+        PopulateAuthHeaders(client);
+
+        AddJsonToUnityWebRequest(client, jsonData);
+
+        //await client.SendWebRequest();
+        client.uploadHandler.Dispose();
+        return client;
+    }
+
+    public void PopulateAuthHeaders(UnityWebRequest client)
+    {
+        client.SetRequestHeader("Accept", "text/event-stream");
+        //client.SetRequestHeader("Authorization", "Bearer " + API_KEY);
+        //client.SetRequestHeader("Content-Type", "application/json");
+        client.timeout = 60;
+        client.SetRequestHeader("Authorization", $"Bearer {key}");
+        client.SetRequestHeader("User-Agent", $"hexthedev/openai_api_unity");
+    }
+
+    private void AddJsonToUnityWebRequest(UnityWebRequest client, string json)
+    {
+        client.SetRequestHeader("Content-Type", "application/json");
+        client.uploadHandler = new UploadHandlerRaw(
+            Encoding.UTF8.GetBytes(json)
+        );
+    }
+    #endregion
 
 
     /// <summary>

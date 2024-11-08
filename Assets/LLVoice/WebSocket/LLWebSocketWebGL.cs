@@ -15,8 +15,9 @@ namespace LLVoice.Net
         /// </summary>
         public Action<string> OnStringMessageCallback;
         public Action<byte[]> OnByteMessageCallback;
+        public Action<string> OnCloseCallback;
         public string objName;
-        public bool IsConnected { get; set; }
+        public bool IsConnected { get; set; } = false;
         public LLWebSocketWebGL(Uri url, string objName)
         {
             mUrl = url;
@@ -85,18 +86,23 @@ namespace LLVoice.Net
 
 		public IEnumerator Connect(Action onConnect = null, Action<string> OnCloseCallback = null)
 		{
+        	this.OnCloseCallback = OnCloseCallback;
 			m_NativeRef = SocketCreate (mUrl.ToString(), objName);
 
 			while (SocketState(m_NativeRef) == 0)
 				yield return 0;
             if (SocketState(m_NativeRef) == 1)
+            {
+                IsConnected = true;
                 onConnect?.Invoke();
+            }
         }
 
         public void OnClose(string errorMsg)
         {
             //Debug.LogError("websocket连接关闭:" + errorMsg);
-            //OnCloseCallback?.Invoke(errorMsg);
+            IsConnected = false;
+            OnCloseCallback?.Invoke(errorMsg);
         }
  
 		public void Close()

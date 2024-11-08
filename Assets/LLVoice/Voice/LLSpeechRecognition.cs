@@ -80,7 +80,7 @@ namespace LLVoice.Voice
         /// <summary>
         /// 是否唤醒对话 
         /// </summary>
-        public Action<bool> isAwakeCallback;
+        public UnityEvent<bool> isAwakeCallback = new ();
         /// <summary>
         /// 是否结束对话回调
         /// </summary>
@@ -105,10 +105,10 @@ namespace LLVoice.Voice
             
         }
 
-        public virtual void RecogniseString(string text, Action<bool> isAwakeCallback) {
+        public virtual void RecogniseString(string text, UnityAction<bool> isAwakeCallback) {
             if (string.IsNullOrEmpty(text))return;
 
-            this.isAwakeCallback = isAwakeCallback;
+            this.isAwakeCallback.AddListener(isAwakeCallback);
             //没有唤醒的情况下，检测是否唤醒了LLSpeechRecognition
             if (isAwake) {
                 //接收消息

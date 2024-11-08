@@ -43,8 +43,10 @@ namespace LLVoice.Voice
             base.Awake();
             if (!audioSource)
                 audioSource = gameObject.GetOrAddComponent<AudioSource>();
-            audioPlayQueue = gameObject.GetOrAddComponent<LLAudioPlayQueue>();
-            audioPlayQueue.audioSource = audioSource;
+            if (audioPlayQueue == null) {
+                audioPlayQueue = gameObject.GetComponentInChildren<LLAudioPlayQueue>();
+                audioPlayQueue.audioSource = audioSource;
+            }
         }
 
         private void Start()
@@ -114,13 +116,26 @@ namespace LLVoice.Voice
             msgHandler.OnRecogniseCallback.AddListener(OnResultCallbacks);
             msgHandler.OnIsSpeakingCallback = SendIsSpeaking;
             msgHandler.OnIdleLongTimeCallback = () => { SendIsSpeaking(false); };
+            msgHandler.isAwakeCallback.AddListener(OnIsWakeUp);
 
             //初始化
             ClientFirstConnOnline();
             Debug.Log("websocket 初始化完成");
             LLMicrophoneRecorderMgr.Instance.Initialized();
+            audioPlayQueue.PlayPreWelcomeAudio();
+
             //异步线程无法启动协程
             //StartCoroutine(test());
+        }
+
+        public void OnIsWakeUp(bool isWakeUp)
+        {
+            if (isWakeUp)
+            {
+                //唤醒
+                Debug.Log("唤醒");
+                audioPlayQueue.PlayPreWakeUpAudio();
+            }
         }
 
         /// <summary>
