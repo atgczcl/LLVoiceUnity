@@ -57,7 +57,7 @@ namespace LLVoice.Voice
                 Debug.Log("开始初始化");
                 //默认已经进行了切回主线程处理
                 Init();
-            }, onStrMsg:OnMessage);
+            }, onStrMsg:OnWebSocketMessage);
             //TestTTS();
             //SendChatRequest(testTTSString);
         }
@@ -75,8 +75,11 @@ namespace LLVoice.Voice
             LLMManager.Instance.llmOpenAI.PostMsg(text, answer =>
             {
                 Debug.Log("收到回复: " + answer);
-                SendTTS(answer);
-                OnResultEvent?.Invoke(answer);
+                //唤醒状态不处理数据
+                if (!msgHandler.isAwake) { 
+                    SendTTS(answer);
+                    OnResultEvent?.Invoke(answer);
+                }
             });
         }
 
@@ -100,13 +103,13 @@ namespace LLVoice.Voice
 
             LLTTSManager.Instance.GetTTSStream_SFT_Json(content, clip => { 
                 Debug.Log("TTS 请求成功");
-                if (clip != null) {
+                if (clip != null && !msgHandler.isAwake) {
                     audioPlayQueue.Enqueue(clip);
                 }
             });
         }
 
-        private void OnMessage(string msg)
+        private void OnWebSocketMessage(string msg)
         {
             Debug.Log("websocket 收到消息: " + msg);
             msgHandler.ReceiveMessages(msg);

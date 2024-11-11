@@ -28,7 +28,7 @@ namespace LLVoice.LLM
         public string m_gptModel = "qwen";
 
 
-        private void Start()
+        public void Start()
         {
             //运行时，添加AI设定
             m_DataList.Add(new SendData("system", m_SystemSetting));
